@@ -173,7 +173,7 @@ export const Login = () => {
               <div className="space-y-2">
                 <Label htmlFor="role">Rol</Label>
                 <Select onValueChange={(value) => registerForm.setValue('role', value as 'STUDENT' | 'TEACHER')}>
-                  <SelectTrigger>
+                  <SelectTrigger id="role">
                     <SelectValue placeholder="Rol seçin" />
                   </SelectTrigger>
                   <SelectContent>

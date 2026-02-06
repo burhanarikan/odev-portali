@@ -146,7 +146,7 @@ export const CreateAssignment = () => {
               <div className="space-y-2">
                 <Label htmlFor="weekNumber">Hafta</Label>
                 <Select onValueChange={(value) => form.setValue('weekNumber', parseInt(value))}>
-                  <SelectTrigger>
+                  <SelectTrigger id="weekNumber">
                     <SelectValue placeholder="Hafta seçin" />
                   </SelectTrigger>
                   <SelectContent>
@@ -182,7 +182,7 @@ export const CreateAssignment = () => {
                   onValueChange={(value) => form.setValue('levelId', value)}
                   disabled={levelsLoading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="levelId">
                     <SelectValue placeholder={levelsLoading ? 'Yükleniyor...' : 'Seviye seçin'} />
                   </SelectTrigger>
                   <SelectContent>
@@ -272,7 +272,7 @@ export const CreateAssignment = () => {
               {targetType === 'class' && levelId && (
                 <div className="mt-2 max-w-xs">
                   <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                    <SelectTrigger>
+                    <SelectTrigger id="targetClass">
                       <SelectValue placeholder="Sınıf seçin" />
                     </SelectTrigger>
                     <SelectContent>

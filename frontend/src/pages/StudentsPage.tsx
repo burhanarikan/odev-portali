@@ -83,7 +83,7 @@ export const StudentsPage = () => {
             <div className="w-full sm:w-48">
               <Label htmlFor="level">Seviye</Label>
               <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger>
+                <SelectTrigger id="level">
                   <SelectValue placeholder="Seviye seç" />
                 </SelectTrigger>
                 <SelectContent>
@@ -97,9 +97,9 @@ export const StudentsPage = () => {
             </div>
 
             <div className="w-full sm:w-32">
-              <Label htmlFor="class">Sınıf</Label>
+              <Label htmlFor="filter-class">Sınıf</Label>
               <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger>
+                <SelectTrigger id="filter-class">
                   <SelectValue placeholder="Sınıf seç" />
                 </SelectTrigger>
                 <SelectContent>
