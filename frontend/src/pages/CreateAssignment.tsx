@@ -54,8 +54,8 @@ export const CreateAssignment = () => {
   const weekNumber = form.watch('weekNumber');
   const description = form.watch('description');
 
-  // Yazarken benzer ödevleri canlı ara: başlık veya açıklama yazılınca (seviye beklenmez, tüm seviyelerde aranır)
-  const hasEnoughText = (title?.trim().length ?? 0) >= 2 || (description?.trim().length ?? 0) >= 2;
+  // Yazarken benzer ödevleri canlı ara: başlık veya açıklama en az 1 karakter (baş harf eşleşmesi dahil)
+  const hasEnoughText = (title?.trim().length ?? 0) >= 1 || (description?.trim().length ?? 0) >= 1;
   useEffect(() => {
     if (!hasEnoughText) {
       setLiveSimilarAssignments([]);
@@ -82,7 +82,8 @@ export const CreateAssignment = () => {
   const studentsInLevel = levelId
     ? studentsList.filter((s) => s.class?.level?.id === levelId)
     : [];
-  const classesInLevel = studentsInLevel.reduce<{ id: string; name: string }[]>((acc, s) => {
+  // Kurumda sadece 101 ve 102 sınıfı var; tüm öğrencilerden unique sınıf listesi (seviyeden bağımsız)
+  const classesInLevel = studentsList.reduce<{ id: string; name: string }[]>((acc, s) => {
     if (s.class && !acc.some((c) => c.id === s.class!.id)) acc.push({ id: s.class.id, name: s.class.name });
     return acc;
   }, []);

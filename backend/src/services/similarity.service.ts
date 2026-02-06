@@ -19,63 +19,51 @@ export class SimilarityService {
     'of', 'to', 'in', 'for', 'on', 'with', 'as', 'by', 'at', 'from'
   ]);
 
+  /** Tüm kelimeleri al; en az 1 karakter (baş harf eşleşmesi için). Stop word'ler çıkarılır. */
   private tokenize(text: string): string[] {
     const cleaned = text
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
-      .filter(token => 
-        token.length > 2 && !this.stopWords.has(token)
+      .filter(token =>
+        token.length >= 1 && !this.stopWords.has(token)
       );
     return cleaned;
   }
 
-  private jaccardSimilarity(tokens1: string[], tokens2: string[]): number {
-    const set1 = new Set(tokens1);
-    const set2 = new Set(tokens2);
-    
-    const intersection = new Set([...set1].filter(x => set2.has(x)));
-    const union = new Set([...set1, ...set2]);
-    
-    return union.size === 0 ? 0 : intersection.size / union.size;
+  /** İki token eşleşir: aynı kelime veya aynı baş harf (Türkçe duyarlı). */
+  private tokenMatches(a: string, b: string): boolean {
+    if (a === b) return true;
+    if (!a.length || !b.length) return false;
+    const firstA = a.charAt(0).toLowerCase();
+    const firstB = b.charAt(0).toLowerCase();
+    return firstA === firstB;
   }
 
-  private cosineSimilarity(tokens1: string[], tokens2: string[]): number {
-    const freq1 = new Map<string, number>();
-    const freq2 = new Map<string, number>();
-    
-    tokens1.forEach(t => freq1.set(t, (freq1.get(t) || 0) + 1));
-    tokens2.forEach(t => freq2.set(t, (freq2.get(t) || 0) + 1));
-    
-    const allTokens = new Set([...tokens1, ...tokens2]);
-    
-    let dotProduct = 0;
-    let mag1 = 0;
-    let mag2 = 0;
-    
-    allTokens.forEach(token => {
-      const v1 = freq1.get(token) || 0;
-      const v2 = freq2.get(token) || 0;
-      dotProduct += v1 * v2;
-      mag1 += v1 * v1;
-      mag2 += v2 * v2;
-    });
-    
-    return (mag1 === 0 || mag2 === 0) 
-      ? 0 
-      : dotProduct / (Math.sqrt(mag1) * Math.sqrt(mag2));
+  /**
+   * Kullanıcı metnindeki her kelime için: mevcut ödevde en az bir kelime eşleşiyor mu (tam veya baş harf)?
+   * Skor = eşleşen kullanıcı kelimesi sayısı / kullanıcı kelimesi sayısı.
+   * Yazdıkça sadece en az bir kelimesi eşleşen ödevler kalır (skor > 0).
+   */
+  private wordMatchScore(userTokens: string[], existingTokens: string[]): number {
+    if (userTokens.length === 0) return 0;
+    const existingSet = existingTokens;
+    let matched = 0;
+    for (const u of userTokens) {
+      const hasMatch = existingSet.some((t) => this.tokenMatches(u, t));
+      if (hasMatch) matched += 1;
+    }
+    return matched / userTokens.length;
   }
 
   async findSimilarAssignments(
     title: string,
     description: string,
     _levelId?: string,
-    _weekNumber?: number,
-    threshold = 0.4
+    _weekNumber?: number
   ): Promise<SimilarAssignment[]> {
-    const newText = `${title} ${description || ''}`;
+    const newText = `${title || ''} ${description || ''}`.trim();
     const newTokens = this.tokenize(newText);
-    const titleOnlyTokens = this.tokenize(title);
 
     const existingAssignments = await prisma.assignment.findMany({
       where: {
@@ -100,22 +88,14 @@ export class SimilarityService {
     const similar: SimilarAssignment[] = [];
 
     for (const assignment of existingAssignments) {
-      const existingText = `${assignment.title} ${assignment.description || ''}`;
+      const existingText = `${assignment.title} ${assignment.description || ''}`.trim();
       const existingTokens = this.tokenize(existingText);
-      const existingTitleTokens = this.tokenize(assignment.title);
 
-      const jaccard = this.jaccardSimilarity(newTokens, existingTokens);
-      const cosine = this.cosineSimilarity(newTokens, existingTokens);
-      const avgScore = (jaccard + cosine) / 2;
-      const titleSimilarity = this.jaccardSimilarity(titleOnlyTokens, existingTitleTokens);
+      // Başlık + açıklamadaki tüm kelimeler; en az bir kelime tam veya baş harf eşleşirse skor > 0
+      const score = this.wordMatchScore(newTokens, existingTokens);
 
-      // Başlık veya başlık+açıklama benzerliği yeterliyse listele (aynı veya farklı hoca)
-      const aboveThreshold = avgScore >= threshold;
-      const sameTitleEnough = titleOnlyTokens.length > 0 && titleSimilarity >= 0.35;
-
-      if (aboveThreshold || sameTitleEnough) {
+      if (score > 0) {
         const targetsSummary = this.formatTargetsSummary(assignment.targets);
-        const displayScore = Math.max(avgScore, titleSimilarity);
         similar.push({
           id: assignment.id,
           title: assignment.title,
@@ -123,7 +103,7 @@ export class SimilarityService {
           teacherName: assignment.teacher.user.name,
           levelName: assignment.level.name,
           weekNumber: assignment.weekNumber,
-          similarityScore: Math.round(displayScore * 100 * 100) / 100,
+          similarityScore: Math.round(score * 100 * 100) / 100,
           targetsSummary
         });
       }

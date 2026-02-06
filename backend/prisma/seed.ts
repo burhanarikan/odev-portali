@@ -29,36 +29,16 @@ async function main() {
     create: { name: 'B2', sortOrder: 4 },
   });
 
-  // --- Sınıflar (101, 102) ---
-  const classA1_101 = await prisma.class.upsert({
+  // --- Sınıflar: Kurumda sadece 101 ve 102 (tek seviye A1 altında) ---
+  const class101 = await prisma.class.upsert({
     where: { name_levelId: { name: '101', levelId: levelA1.id } },
     update: {},
     create: { name: '101', levelId: levelA1.id },
   });
-  const classA1_102 = await prisma.class.upsert({
+  const class102 = await prisma.class.upsert({
     where: { name_levelId: { name: '102', levelId: levelA1.id } },
     update: {},
     create: { name: '102', levelId: levelA1.id },
-  });
-  const classA2_101 = await prisma.class.upsert({
-    where: { name_levelId: { name: '101', levelId: levelA2.id } },
-    update: {},
-    create: { name: '101', levelId: levelA2.id },
-  });
-  const classA2_102 = await prisma.class.upsert({
-    where: { name_levelId: { name: '102', levelId: levelA2.id } },
-    update: {},
-    create: { name: '102', levelId: levelA2.id },
-  });
-  const classB1_101 = await prisma.class.upsert({
-    where: { name_levelId: { name: '101', levelId: levelB1.id } },
-    update: {},
-    create: { name: '101', levelId: levelB1.id },
-  });
-  const classB1_102 = await prisma.class.upsert({
-    where: { name_levelId: { name: '102', levelId: levelB1.id } },
-    update: {},
-    create: { name: '102', levelId: levelB1.id },
   });
 
   const defaultPassword = await hashPassword('123456');
@@ -82,32 +62,32 @@ async function main() {
 
   // --- Öğrenciler (Dil okulu örnekleri; her sınıfa en az 5’er, ek 3’er öğrenci dahil) ---
   const studentsData = [
-    { name: 'Ayşe Yılmaz', email: 'ayse.yilmaz@email.com', classId: classA1_101.id },
-    { name: 'Mehmet Kaya', email: 'mehmet.kaya@email.com', classId: classA1_101.id },
-    { name: 'Elif Yıldız', email: 'elif.yildiz@email.com', classId: classA1_101.id },
-    { name: 'Burak Şahin', email: 'burak.sahin@email.com', classId: classA1_101.id },
-    { name: 'Ceren Acar', email: 'ceren.acar@email.com', classId: classA1_101.id },
-    { name: 'Zeynep Demir', email: 'zeynep.demir@email.com', classId: classA1_102.id },
-    { name: 'Can Öztürk', email: 'can.ozturk@email.com', classId: classA1_102.id },
-    { name: 'Derya Kılıç', email: 'derya.kilic@email.com', classId: classA1_102.id },
-    { name: 'Furkan Aydın', email: 'furkan.aydin@email.com', classId: classA1_102.id },
-    { name: 'Gamze Polat', email: 'gamze.polat@email.com', classId: classA1_102.id },
-    { name: 'Selin Arslan', email: 'selin.arslan@email.com', classId: classA2_101.id },
-    { name: 'Emre Çelik', email: 'emre.celik@email.com', classId: classA2_101.id },
-    { name: 'Hakan Yurt', email: 'hakan.yurt@email.com', classId: classA2_101.id },
-    { name: 'İrem Toprak', email: 'irem.toprak@email.com', classId: classA2_101.id },
-    { name: 'Kaan Özer', email: 'kaan.ozer@email.com', classId: classA2_101.id },
-    { name: 'Leyla Çetin', email: 'leyla.cetin@email.com', classId: classA2_102.id },
-    { name: 'Murat Doğan', email: 'murat.dogan@email.com', classId: classA2_102.id },
-    { name: 'Nazlı Erdem', email: 'nazli.erdem@email.com', classId: classA2_102.id },
-    { name: 'Deniz Aydın', email: 'deniz.aydin@email.com', classId: classB1_101.id },
-    { name: 'Ece Koç', email: 'ece.koc@email.com', classId: classB1_101.id },
-    { name: 'Oğuz Güneş', email: 'oguz.gunes@email.com', classId: classB1_101.id },
-    { name: 'Pelin Yılmaz', email: 'pelin.yilmaz@email.com', classId: classB1_101.id },
-    { name: 'Rıza Arslan', email: 'riza.arslan@email.com', classId: classB1_101.id },
-    { name: 'Sude Kara', email: 'sude.kara@email.com', classId: classB1_102.id },
-    { name: 'Tolga Özkan', email: 'tolga.ozkan@email.com', classId: classB1_102.id },
-    { name: 'Utku Demir', email: 'utku.demir@email.com', classId: classB1_102.id },
+    { name: 'Ayşe Yılmaz', email: 'ayse.yilmaz@email.com', classId: class101.id },
+    { name: 'Mehmet Kaya', email: 'mehmet.kaya@email.com', classId: class101.id },
+    { name: 'Elif Yıldız', email: 'elif.yildiz@email.com', classId: class101.id },
+    { name: 'Burak Şahin', email: 'burak.sahin@email.com', classId: class101.id },
+    { name: 'Ceren Acar', email: 'ceren.acar@email.com', classId: class101.id },
+    { name: 'Zeynep Demir', email: 'zeynep.demir@email.com', classId: class102.id },
+    { name: 'Can Öztürk', email: 'can.ozturk@email.com', classId: class102.id },
+    { name: 'Derya Kılıç', email: 'derya.kilic@email.com', classId: class102.id },
+    { name: 'Furkan Aydın', email: 'furkan.aydin@email.com', classId: class102.id },
+    { name: 'Gamze Polat', email: 'gamze.polat@email.com', classId: class102.id },
+    { name: 'Selin Arslan', email: 'selin.arslan@email.com', classId: class101.id },
+    { name: 'Emre Çelik', email: 'emre.celik@email.com', classId: class101.id },
+    { name: 'Hakan Yurt', email: 'hakan.yurt@email.com', classId: class101.id },
+    { name: 'İrem Toprak', email: 'irem.toprak@email.com', classId: class101.id },
+    { name: 'Kaan Özer', email: 'kaan.ozer@email.com', classId: class101.id },
+    { name: 'Leyla Çetin', email: 'leyla.cetin@email.com', classId: class102.id },
+    { name: 'Murat Doğan', email: 'murat.dogan@email.com', classId: class102.id },
+    { name: 'Nazlı Erdem', email: 'nazli.erdem@email.com', classId: class102.id },
+    { name: 'Deniz Aydın', email: 'deniz.aydin@email.com', classId: class101.id },
+    { name: 'Ece Koç', email: 'ece.koc@email.com', classId: class101.id },
+    { name: 'Oğuz Güneş', email: 'oguz.gunes@email.com', classId: class101.id },
+    { name: 'Pelin Yılmaz', email: 'pelin.yilmaz@email.com', classId: class101.id },
+    { name: 'Rıza Arslan', email: 'riza.arslan@email.com', classId: class101.id },
+    { name: 'Sude Kara', email: 'sude.kara@email.com', classId: class102.id },
+    { name: 'Tolga Özkan', email: 'tolga.ozkan@email.com', classId: class102.id },
+    { name: 'Utku Demir', email: 'utku.demir@email.com', classId: class102.id },
   ];
 
   for (const s of studentsData) {
@@ -210,8 +190,8 @@ async function main() {
   if (legacyStudent) {
     await prisma.student.upsert({
       where: { userId: legacyStudent.id },
-      update: { classId: classA1_101.id },
-      create: { userId: legacyStudent.id, classId: classA1_101.id },
+      update: { classId: class101.id },
+      create: { userId: legacyStudent.id, classId: class101.id },
     });
   }
 
