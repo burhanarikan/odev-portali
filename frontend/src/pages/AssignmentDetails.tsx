@@ -79,6 +79,22 @@ export const AssignmentDetails = () => {
   const hasSubmitted = assignment.submissions && assignment.submissions.length > 0;
   const submission = assignment.submissions?.[0];
 
+  // Backend bazen attachments'ı JSON string döndürüyor; normalize et, tüm bileşende güvenle kullan
+  const attachmentList = ((): string[] => {
+    const a = assignment.attachments;
+    if (Array.isArray(a)) return a;
+    if (typeof a === 'string') {
+      try {
+        const parsed = JSON.parse(a);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  })();
+  const normalizedAssignment = { ...assignment, attachments: attachmentList };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -90,12 +106,12 @@ export const AssignmentDetails = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{assignment.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{normalizedAssignment.title}</h1>
             <p className="text-gray-600">
-              {assignment.level?.name} - {assignment.weekNumber}. Hafta
+              {normalizedAssignment.level?.name} - {normalizedAssignment.weekNumber}. Hafta
             </p>
           </div>
-          {assignment.isDraft && (
+          {normalizedAssignment.isDraft && (
             <Badge variant="outline">Taslak</Badge>
           )}
         </div>
@@ -128,7 +144,7 @@ export const AssignmentDetails = () => {
               variant="destructive"
               disabled={deleteAssignmentMutation.isPending}
               onClick={async () => {
-                await deleteAssignmentMutation.mutateAsync(assignment.id);
+                await deleteAssignmentMutation.mutateAsync(normalizedAssignment.id);
                 setDeleteDialogOpen(false);
                 navigate('/dashboard');
               }}
@@ -146,10 +162,10 @@ export const AssignmentDetails = () => {
               <CardTitle>Ödev Açıklaması</CardTitle>
             </CardHeader>
             <CardContent>
-              {assignment.description ? (
+              {normalizedAssignment.description ? (
                 <div className="prose max-w-none">
                   <p className="whitespace-pre-wrap text-gray-700">
-                    {assignment.description}
+                    {normalizedAssignment.description}
                   </p>
                 </div>
               ) : (
@@ -158,14 +174,14 @@ export const AssignmentDetails = () => {
             </CardContent>
           </Card>
 
-          {assignment.attachments && assignment.attachments.length > 0 && (
+          {attachmentList.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Ekli Dosyalar</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {assignment.attachments.map((attachment, index) => (
+                  {attachmentList.map((attachment, index) => (
                     <div key={index} className="flex items-center justify-between p-2 border rounded">
                       <div className="flex items-center space-x-2">
                         <FileText className="h-4 w-4 text-gray-500" />
@@ -239,7 +255,7 @@ export const AssignmentDetails = () => {
                     )}
                   </div>
                 ) : (
-                  <SubmissionForm assignmentId={assignment.id} />
+                  <SubmissionForm assignmentId={normalizedAssignment.id} />
                 )}
               </CardContent>
             </Card>
@@ -256,7 +272,7 @@ export const AssignmentDetails = () => {
                 <User className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">Öğretmen:</span>
                 <span className="text-sm font-medium">
-                  {assignment.teacher?.user?.name}
+                  {normalizedAssignment.teacher?.user?.name}
                 </span>
               </div>
               
@@ -264,7 +280,7 @@ export const AssignmentDetails = () => {
                 <Calendar className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">Başlangıç:</span>
                 <span className="text-sm font-medium">
-                  {formatDate(assignment.startDate)}
+                  {formatDate(normalizedAssignment.startDate)}
                 </span>
               </div>
               
@@ -272,15 +288,15 @@ export const AssignmentDetails = () => {
                 <Clock className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">Son teslim:</span>
                 <span className="text-sm font-medium">
-                  {formatDate(assignment.dueDate)}
+                  {formatDate(normalizedAssignment.dueDate)}
                 </span>
               </div>
             </CardContent>
           </Card>
 
-          {!isStudent && assignment.submissions && assignment.submissions.length > 0 && (
+          {!isStudent && normalizedAssignment.submissions && normalizedAssignment.submissions.length > 0 && (
             <SubmissionListCard
-              submissions={assignment.submissions}
+              submissions={normalizedAssignment.submissions}
               expandedId={expandedSubmissionId}
               onToggleExpand={setExpandedSubmissionId}
               onSubmitEvaluation={submitEvaluationMutation.mutateAsync}

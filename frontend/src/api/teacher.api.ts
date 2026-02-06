@@ -1,5 +1,6 @@
 import api from './client';
 import { Assignment, SimilarAssignment } from '../types';
+import { withNormalizedAttachments, withNormalizedAttachmentsList } from '../utils/normalizeAttachments';
 
 export interface Level {
   id: string;
@@ -74,12 +75,12 @@ export const teacherApi = {
 
   getAssignments: async () => {
     const response = await api.get<Assignment[]>('/teacher/assignments');
-    return response.data;
+    return withNormalizedAttachmentsList(response.data);
   },
 
   getAssignmentById: async (id: string) => {
     const response = await api.get<Assignment>(`/teacher/assignments/${id}`);
-    return response.data;
+    return withNormalizedAttachments(response.data);
   },
 
   updateAssignment: async (id: string, data: Partial<{
@@ -117,14 +118,14 @@ export const teacherApi = {
     const response = await api.get<Assignment[]>(
       `/teacher/assignments/by-week/${weekNumber}`
     );
-    return response.data;
+    return withNormalizedAttachmentsList(response.data);
   },
 
   getAssignmentsByLevel: async (levelId: string) => {
     const response = await api.get<Assignment[]>(
       `/teacher/assignments/by-level/${levelId}`
     );
-    return response.data;
+    return withNormalizedAttachmentsList(response.data);
   },
 
   getSubmissions: async () => {

@@ -1,15 +1,20 @@
 import api from './client';
 import { StudentAssignments, Assignment, Submission, Evaluation } from '../types';
+import { withNormalizedAttachments, withNormalizedAttachmentsList } from '../utils/normalizeAttachments';
 
 export const studentApi = {
   getAssignments: async () => {
-    const response = await api.get<StudentAssignments>('/student/assignments');
-    return response.data;
+    const data = await api.get<StudentAssignments>('/student/assignments').then((r) => r.data);
+    return {
+      active: withNormalizedAttachmentsList(data.active ?? []),
+      upcoming: withNormalizedAttachmentsList(data.upcoming ?? []),
+      past: withNormalizedAttachmentsList(data.past ?? []),
+    };
   },
 
   getAssignmentById: async (id: string) => {
     const response = await api.get<Assignment>(`/student/assignments/${id}`);
-    return response.data;
+    return withNormalizedAttachments(response.data);
   },
 
   submitAssignment: async (data: {
