@@ -44,8 +44,8 @@ DATABASE_URL="postgresql://..." npx prisma db seed
 2. **New +** → **Web Service** → Repo seçin.
 3. Ayarlar:
    - **Root Directory:** `backend`
-   - **Build Command:** `npm install && npx prisma generate`
-   - **Start Command:** `npx prisma db push; npm run start` (veya sadece `npm run start`; push’u ayrı yaptıysanız)
+   - **Build Command:** `npm install && npx prisma generate && npm run build`
+   - **Start Command:** `npm run start` (veya sadece `npm run start`; push’u ayrı yaptıysanız)
 4. **Environment** ekleyin:
    - `DATABASE_URL` = (Render PostgreSQL veya Neon connection string)
    - `JWT_SECRET` = uzun rastgele bir string
