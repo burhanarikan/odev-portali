@@ -11,10 +11,13 @@ export const Header = () => {
     <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold text-gray-900">
               Ödev Yönetim Sistemi
             </h1>
+            <span className="text-xs font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded border border-amber-200">
+              Deneme sürümüdür
+            </span>
           </div>
           
           <div className="flex items-center space-x-4">

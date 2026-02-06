@@ -168,9 +168,9 @@ export const StudentDashboard = () => {
                       )}
                     </div>
                     <div className="mt-4">
-                      <Link to={`/assignments/${assignment.id}`}>
-                        <Button className="w-full">Ödevi Görüntüle</Button>
-                      </Link>
+                      <Button className="w-full" asChild>
+                        <Link to={`/assignments/${assignment.id}`}>Ödevi Görüntüle</Link>
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -202,9 +202,9 @@ export const StudentDashboard = () => {
                       </div>
                     </div>
                     <div className="mt-4">
-                      <Link to={`/assignments/${assignment.id}`}>
-                        <Button variant="outline" className="w-full">Önizle</Button>
-                      </Link>
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link to={`/assignments/${assignment.id}`}>Önizle</Link>
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -236,9 +236,9 @@ export const StudentDashboard = () => {
                       </div>
                     </div>
                     <div className="mt-4">
-                      <Link to={`/assignments/${assignment.id}`}>
-                        <Button variant="outline" className="w-full">Detay</Button>
-                      </Link>
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link to={`/assignments/${assignment.id}`}>Detay</Link>
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

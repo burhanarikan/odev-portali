@@ -69,16 +69,16 @@ export const checkSimilarity = async (req: Request, res: Response, next: NextFun
     const { title, description, levelId, weekNumber } = req.body as {
       title: string;
       description?: string;
-      levelId: string;
-      weekNumber: string;
+      levelId?: string;
+      weekNumber?: string | number;
     };
     const { SimilarityService } = await import('../services/similarity.service');
     const similarityService = new SimilarityService();
     const similarAssignments = await similarityService.findSimilarAssignments(
-      title,
+      title ?? '',
       description ?? '',
       levelId,
-      parseInt(weekNumber, 10)
+      weekNumber ? parseInt(String(weekNumber), 10) : undefined
     );
     res.json({ similarAssignments });
   } catch (error: unknown) {

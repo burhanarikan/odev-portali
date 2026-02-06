@@ -31,9 +31,11 @@ export const useSubmitAssignment = () => {
 
   return useMutation({
     mutationFn: studentApi.submitAssignment,
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['student', 'assignments'] });
       queryClient.invalidateQueries({ queryKey: ['student', 'evaluations'] });
+      queryClient.invalidateQueries({ queryKey: ['student', 'assignment', variables.assignmentId] });
+      queryClient.invalidateQueries({ queryKey: ['student', 'assignment'] });
     },
   });
 };

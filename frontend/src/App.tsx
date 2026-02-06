@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Layout } from '@/components/layout/Layout';
 import { Login } from '@/pages/Login';
@@ -30,6 +30,11 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
   }
 
   return <>{children}</>;
+}
+
+function AssignmentDetailsKeyed() {
+  const { id } = useParams<{ id: string }>();
+  return <AssignmentDetails key={id} />;
 }
 
 function App() {
@@ -65,11 +70,11 @@ function App() {
 
         <Route path="/assignments/:id" element={
           <ProtectedRoute>
-            <Layout>
-              <AssignmentDetails />
-            </Layout>
+            <Layout />
           </ProtectedRoute>
-        } />
+        }>
+          <Route index element={<AssignmentDetailsKeyed />} />
+        </Route>
 
         <Route path="/students" element={
           <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>

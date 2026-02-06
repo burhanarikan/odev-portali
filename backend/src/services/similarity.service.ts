@@ -69,16 +69,16 @@ export class SimilarityService {
   async findSimilarAssignments(
     title: string,
     description: string,
-    levelId: string,
-    weekNumber: number,
-    threshold = 0.7
+    _levelId?: string,
+    _weekNumber?: number,
+    threshold = 0.4
   ): Promise<SimilarAssignment[]> {
     const newText = `${title} ${description || ''}`;
     const newTokens = this.tokenize(newText);
+    const titleOnlyTokens = this.tokenize(title);
 
     const existingAssignments = await prisma.assignment.findMany({
       where: {
-        levelId,
         isDraft: false
       },
       include: {
@@ -102,13 +102,20 @@ export class SimilarityService {
     for (const assignment of existingAssignments) {
       const existingText = `${assignment.title} ${assignment.description || ''}`;
       const existingTokens = this.tokenize(existingText);
+      const existingTitleTokens = this.tokenize(assignment.title);
 
       const jaccard = this.jaccardSimilarity(newTokens, existingTokens);
       const cosine = this.cosineSimilarity(newTokens, existingTokens);
       const avgScore = (jaccard + cosine) / 2;
+      const titleSimilarity = this.jaccardSimilarity(titleOnlyTokens, existingTitleTokens);
 
-      if (avgScore >= threshold) {
+      // Başlık veya başlık+açıklama benzerliği yeterliyse listele (aynı veya farklı hoca)
+      const aboveThreshold = avgScore >= threshold;
+      const sameTitleEnough = titleOnlyTokens.length > 0 && titleSimilarity >= 0.35;
+
+      if (aboveThreshold || sameTitleEnough) {
         const targetsSummary = this.formatTargetsSummary(assignment.targets);
+        const displayScore = Math.max(avgScore, titleSimilarity);
         similar.push({
           id: assignment.id,
           title: assignment.title,
@@ -116,7 +123,7 @@ export class SimilarityService {
           teacherName: assignment.teacher.user.name,
           levelName: assignment.level.name,
           weekNumber: assignment.weekNumber,
-          similarityScore: Math.round(avgScore * 100 * 100) / 100,
+          similarityScore: Math.round(displayScore * 100 * 100) / 100,
           targetsSummary
         });
       }

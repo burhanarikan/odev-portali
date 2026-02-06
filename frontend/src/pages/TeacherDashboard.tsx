@@ -175,9 +175,9 @@ export const TeacherDashboard = () => {
                     )}
                   </div>
                   <div className="mt-4">
-                    <Link to={`/assignments/${assignment.id}`}>
-                      <Button variant="outline" className="w-full">Ödevi Görüntüle</Button>
-                    </Link>
+                    <Button variant="outline" className="w-full" asChild>
+                      <Link to={`/assignments/${assignment.id}`}>Ödevi Görüntüle</Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

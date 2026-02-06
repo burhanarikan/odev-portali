@@ -107,9 +107,8 @@ export const StudentsPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tüm Sınıflar</SelectItem>
-                  <SelectItem value="A">A Sınıfı</SelectItem>
-                  <SelectItem value="B">B Sınıfı</SelectItem>
-                  <SelectItem value="C">C Sınıfı</SelectItem>
+                  <SelectItem value="101">101</SelectItem>
+                  <SelectItem value="102">102</SelectItem>
                 </SelectContent>
               </Select>
             </div>

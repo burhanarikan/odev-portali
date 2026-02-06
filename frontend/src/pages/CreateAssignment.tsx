@@ -54,9 +54,10 @@ export const CreateAssignment = () => {
   const weekNumber = form.watch('weekNumber');
   const description = form.watch('description');
 
-  // Yazarken benzer ödevleri canlı ara (debounce)
+  // Yazarken benzer ödevleri canlı ara: başlık veya açıklama yazılınca (seviye beklenmez, tüm seviyelerde aranır)
+  const hasEnoughText = (title?.trim().length ?? 0) >= 2 || (description?.trim().length ?? 0) >= 2;
   useEffect(() => {
-    if (!title?.trim() || title.trim().length < 2 || !levelId) {
+    if (!hasEnoughText) {
       setLiveSimilarAssignments([]);
       return;
     }
@@ -64,9 +65,9 @@ export const CreateAssignment = () => {
       setLiveSimilarLoading(true);
       teacherApi
         .checkSimilarity({
-          title: title.trim(),
-          description: description ?? '',
-          levelId,
+          title: title?.trim() ?? '',
+          description: description?.trim() ?? '',
+          levelId: levelId || undefined,
           weekNumber: weekNumber || 1,
         })
         .then((res) => {
@@ -76,7 +77,7 @@ export const CreateAssignment = () => {
         .finally(() => setLiveSimilarLoading(false));
     }, 400);
     return () => clearTimeout(t);
-  }, [title, description, levelId, weekNumber]);
+  }, [title, description, levelId, weekNumber, hasEnoughText]);
 
   const studentsInLevel = levelId
     ? studentsList.filter((s) => s.class?.level?.id === levelId)
@@ -186,8 +187,8 @@ export const CreateAssignment = () => {
               </div>
             </div>
 
-            {/* Benzer ödevler - başlık yazarken canlı listele */}
-            {(title?.trim().length >= 2 && levelId) && (
+            {/* Benzer ödevler - başlık veya açıklama yazılınca canlı listele (tüm seviyeler) */}
+            {hasEnoughText && (
               <Card className={liveSimilarAssignments.length > 0 ? 'border-amber-200 bg-amber-50/50' : 'border-gray-200'}>
                 <CardHeader className="py-3">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">

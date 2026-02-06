@@ -103,8 +103,8 @@ export const teacherApi = {
   checkSimilarity: async (data: {
     title: string;
     description?: string;
-    levelId: string;
-    weekNumber: number;
+    levelId?: string;
+    weekNumber?: number;
   }) => {
     const response = await api.post<{ similarAssignments: SimilarAssignment[] }>(
       '/teacher/assignments/check-similarity',
