@@ -10,6 +10,8 @@ export interface SimilarAssignment {
   similarityScore: number;
   /** Örneğin: "Tüm seviye" veya "A Sınıfı" veya "Öğrenci: Ayşe, Mehmet" */
   targetsSummary: string;
+  /** Başlık/açıklamada eşleşen kelimeler (neden benzer gösterilir) */
+  matchedWords: string[];
 }
 
 export class SimilarityService {
@@ -42,15 +44,16 @@ export class SimilarityService {
   }
 
   /**
-   * Skor: kullanıcı kelimelerinden kaçı mevcut ödevde (tam veya prefix) eşleşiyor.
+   * Skor ve eşleşen kelimeler: kullanıcı kelimelerinden hangileri mevcut ödevde (tam veya prefix) eşleşiyor.
    */
-  private wordMatchScore(userTokens: string[], existingTokens: string[]): number {
-    if (userTokens.length === 0) return 0;
-    let matched = 0;
+  private wordMatchScoreAndWords(userTokens: string[], existingTokens: string[]): { score: number; matchedWords: string[] } {
+    if (userTokens.length === 0) return { score: 0, matchedWords: [] };
+    const matchedWords: string[] = [];
     for (const u of userTokens) {
-      if (existingTokens.some((t) => this.tokenMatches(u, t))) matched += 1;
+      if (existingTokens.some((t) => this.tokenMatches(u, t))) matchedWords.push(u);
     }
-    return matched / userTokens.length;
+    const score = matchedWords.length / userTokens.length;
+    return { score, matchedWords };
   }
 
   async findSimilarAssignments(
@@ -88,8 +91,7 @@ export class SimilarityService {
       const existingText = `${assignment.title} ${assignment.description || ''}`.trim();
       const existingTokens = this.tokenize(existingText);
 
-      // Tam veya prefix eşleşme: "ö"/"ör"/"örn" → "örnek" çıkar; "örna" → eşleşme bozulur, çıkmaz
-      const score = this.wordMatchScore(newTokens, existingTokens);
+      const { score, matchedWords } = this.wordMatchScoreAndWords(newTokens, existingTokens);
       if (score <= 0) continue;
 
       const targetsSummary = this.formatTargetsSummary(assignment.targets);
@@ -101,7 +103,8 @@ export class SimilarityService {
         levelName: assignment.level.name,
         weekNumber: assignment.weekNumber,
         similarityScore: Math.round(score * 100 * 100) / 100,
-        targetsSummary
+        targetsSummary,
+        matchedWords: [...new Set(matchedWords)].slice(0, 15),
       });
     }
 

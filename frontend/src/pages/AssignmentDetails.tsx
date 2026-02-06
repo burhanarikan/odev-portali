@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate, formatRelativeTime } from '@/utils/formatDate';
-import { Calendar, Clock, User, FileText, Download, AlertCircle, ArrowLeft, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Download, AlertCircle, ArrowLeft, ChevronDown, ChevronUp, Trash2, AlertTriangle } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { SubmissionForm } from '@/components/student/SubmissionForm';
 
@@ -94,6 +94,10 @@ export const AssignmentDetails = () => {
     return [];
   })();
   const normalizedAssignment = { ...assignment, attachments: attachmentList };
+
+  // Ödevi tanımlayan hoca giriş yapan kullanıcı mı? (Başka hoca değerlendiremez)
+  const canEvaluate =
+    !!user?.id && !!normalizedAssignment.teacher?.user?.id && user.id === normalizedAssignment.teacher.user.id;
 
   return (
     <div className="space-y-6">
@@ -304,6 +308,8 @@ export const AssignmentDetails = () => {
               onSuccess={() => {
                 teacherResult.refetch();
               }}
+              canEvaluate={canEvaluate}
+              assignmentCreatorName={normalizedAssignment.teacher?.user?.name}
             />
           )}
         </div>
@@ -328,6 +334,8 @@ function SubmissionListCard({
   onSubmitEvaluation,
   isSubmitting,
   onSuccess,
+  canEvaluate,
+  assignmentCreatorName,
 }: {
   submissions: SubmissionItem[];
   expandedId: string | null;
@@ -338,6 +346,8 @@ function SubmissionListCard({
   }) => Promise<unknown>;
   isSubmitting: boolean;
   onSuccess: () => void;
+  canEvaluate: boolean;
+  assignmentCreatorName?: string;
 }) {
   return (
     <Card>
@@ -348,6 +358,15 @@ function SubmissionListCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {!canEvaluate && (
+          <div className="flex items-start gap-2 p-3 mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+            <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <p>
+              Bu ödevi {assignmentCreatorName ? `${assignmentCreatorName} ` : 'başka bir hoca '}tanımlamıştır.
+              Yetki almadan değerlendirme yapamazsınız.
+            </p>
+          </div>
+        )}
         <div className="space-y-2">
           {submissions.map((sub) => (
             <div key={sub.id} className="border rounded-lg overflow-hidden">
@@ -377,15 +396,22 @@ function SubmissionListCard({
                 </div>
               </button>
               {expandedId === sub.id && (
-                <SubmissionEvaluationForm
-                  submission={sub}
-                  onSubmit={async (data) => {
-                    await onSubmitEvaluation({ submissionId: sub.id, data });
-                    onSuccess();
-                    onToggleExpand(null);
-                  }}
-                  isSubmitting={isSubmitting}
-                />
+                canEvaluate ? (
+                  <SubmissionEvaluationForm
+                    submission={sub}
+                    onSubmit={async (data) => {
+                      await onSubmitEvaluation({ submissionId: sub.id, data });
+                      onSuccess();
+                      onToggleExpand(null);
+                    }}
+                    isSubmitting={isSubmitting}
+                  />
+                ) : (
+                  <div className="p-4 pt-0 border-t bg-gray-50/50 flex items-center gap-2 text-sm text-amber-700">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                    <span>Bu teslimi sadece ödevi tanımlayan hoca değerlendirebilir.</span>
+                  </div>
+                )
               )}
             </div>
           ))}

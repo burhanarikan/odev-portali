@@ -11,9 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useCreateAssignment, useLevels, useTeacherStudents } from '@/hooks/useAssignments';
 import { useToast } from '@/components/ui/use-toast';
 import { teacherApi } from '@/api/teacher.api';
-import { ArrowLeft, Users, FileText } from 'lucide-react';
+import { ArrowLeft, Users, FileText, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import type { SimilarAssignment } from '@/types';
 
 const assignmentSchema = z.object({
@@ -188,57 +189,95 @@ export const CreateAssignment = () => {
               </div>
             </div>
 
-            {/* Benzer ödevler - başlık veya açıklama yazılınca canlı listele (tüm seviyeler) */}
+            {/* Benzer ödevler - başlık/açıklama yazılınca canlı listele; eşleşen kelimeler ve detay link */}
             {hasEnoughText && (
-              <Card className={liveSimilarAssignments.length > 0 ? 'border-amber-200 bg-amber-50/50' : 'border-gray-200'}>
+              <Card className={liveSimilarAssignments.length > 0 ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200'}>
                 <CardHeader className="py-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2 flex-wrap">
                     {liveSimilarLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : liveSimilarAssignments.length > 0 ? (
+                      <AlertTriangle className="h-4 w-4 text-amber-600" />
                     ) : (
                       <FileText className="h-4 w-4" />
                     )}
                     Benzer ödevler
                     {!liveSimilarLoading && liveSimilarAssignments.length > 0 && (
-                      <span className="text-gray-600 text-xs font-normal">
-                        — Farklı hocalar aynı başlığı kullanabilir; sadece bilgi amaçlı
-                      </span>
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        {liveSimilarAssignments.length} sonuç
+                      </Badge>
                     )}
                   </CardTitle>
+                  <CardDescription className="text-xs">
+                    {liveSimilarLoading
+                      ? 'Başlık ve açıklamadaki kelimelere göre kontrol ediliyor…'
+                      : liveSimilarAssignments.length === 0
+                        ? 'Başlık veya açıklama yazdıkça benzer ödevler burada listelenir.'
+                        : 'Aynı veya benzer kelimeler geçen mevcut ödevler. Bilgi amaçlı; isterseniz yine de oluşturabilirsiniz.'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
                   {liveSimilarLoading ? (
-                    <p className="text-sm text-gray-500">Kontrol ediliyor…</p>
+                    <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Kontrol ediliyor…</span>
+                    </div>
                   ) : liveSimilarAssignments.length === 0 ? (
-                    <p className="text-sm text-gray-500">Bu başlık ve seviyede benzer ödev bulunamadı.</p>
+                    <p className="text-sm text-gray-500 py-1">Bu metinde benzer ödev bulunamadı.</p>
                   ) : (
-                    <ul className="space-y-3 max-h-[420px] overflow-y-auto">
-                      {liveSimilarAssignments.map((a) => (
-                        <li key={a.id} className="p-3 rounded-lg bg-white border border-amber-100 space-y-2">
-                          <div className="flex justify-between items-start gap-2">
-                            <div>
-                              <p className="font-medium text-gray-900">{a.title}</p>
-                              <p className="text-xs text-gray-600">
-                                {a.levelName} · {a.weekNumber}. Hafta · {a.teacherName}
+                    <ul className="space-y-3 max-h-[440px] overflow-y-auto pr-1">
+                      {liveSimilarAssignments.map((a) => {
+                        const severity =
+                          a.similarityScore >= 70 ? 'yüksek' : a.similarityScore >= 40 ? 'orta' : 'düşük';
+                        return (
+                          <li
+                            key={a.id}
+                            className="p-3 rounded-lg bg-white border border-amber-100 shadow-sm space-y-2 hover:border-amber-200 transition-colors"
+                          >
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-gray-900 break-words">{a.title}</p>
+                                <p className="text-xs text-gray-600 mt-0.5">
+                                  {a.levelName} · {a.weekNumber}. Hafta · {a.teacherName}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <Badge
+                                  variant={severity === 'yüksek' ? 'destructive' : severity === 'orta' ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  %{a.similarityScore}
+                                </Badge>
+                                <Link
+                                  to={`/assignments/${a.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-gray-400 hover:text-amber-600 p-1 rounded"
+                                  title="Ödevi yeni sekmede aç"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                </Link>
+                              </div>
+                            </div>
+                            {a.matchedWords && a.matchedWords.length > 0 && (
+                              <p className="text-xs text-amber-800 bg-amber-50 rounded px-2 py-1">
+                                <span className="font-medium">Eşleşen kelimeler:</span>{' '}
+                                {a.matchedWords.join(', ')}
                               </p>
-                            </div>
-                            <span className="text-xs font-medium text-amber-700 whitespace-nowrap">
-                              %{a.similarityScore} benzer
-                            </span>
-                          </div>
-                          {a.targetsSummary && (
-                            <p className="text-xs text-gray-600">
-                              <span className="font-medium text-gray-700">Kime atandı:</span> {a.targetsSummary}
-                            </p>
-                          )}
-                          {a.description && (
-                            <div className="text-xs text-gray-600 bg-gray-50 rounded p-2 max-h-20 overflow-y-auto">
-                              <span className="font-medium text-gray-700">İçerik:</span>{' '}
-                              {a.description.length > 200 ? a.description.slice(0, 200) + '…' : a.description}
-                            </div>
-                          )}
-                        </li>
-                      ))}
+                            )}
+                            {a.targetsSummary && (
+                              <p className="text-xs text-gray-600">
+                                <span className="font-medium text-gray-700">Kime atandı:</span> {a.targetsSummary}
+                              </p>
+                            )}
+                            {a.description && (
+                              <div className="text-xs text-gray-600 bg-gray-50 rounded p-2 max-h-16 overflow-y-auto">
+                                {a.description.length > 180 ? a.description.slice(0, 180) + '…' : a.description}
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </CardContent>

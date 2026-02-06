@@ -139,6 +139,8 @@ export interface SimilarAssignment {
   similarityScore: number;
   /** Örn: "Tüm seviye" veya "A Sınıfı" veya "Öğrenci: X, Y" */
   targetsSummary?: string;
+  /** Eşleşen kelimeler (neden benzer) */
+  matchedWords?: string[];
 }
 
 export interface StudentAssignments {
