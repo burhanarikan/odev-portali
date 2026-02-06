@@ -112,8 +112,8 @@ export class SimilarityService {
     targets: Array<{ targetType: string; class?: { name: string } | null; student?: { user: { name: string } } | null }>
   ): string {
     if (!targets || targets.length === 0) return 'Tüm seviye';
-    const classes = targets.filter(t => t.class).map(t => t.class!.name);
-    const students = targets.filter(t => t.student).map(t => t.student!.user.name);
+    const classes = targets.filter((t): t is typeof t & { class: { name: string } } => !!t.class).map(t => t.class.name);
+    const students = targets.filter((t): t is typeof t & { student: { user: { name: string } } } => !!t.student).map(t => t.student.user.name);
     const parts: string[] = [];
     if (classes.length) parts.push(classes.join(', ') + ' sınıfı');
     if (students.length) parts.push(students.length <= 3 ? 'Öğrenci: ' + students.join(', ') : `${students.length} öğrenci`);

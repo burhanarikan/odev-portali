@@ -51,7 +51,7 @@ export const Login = () => {
         });
       }
     });
-  }, []);
+  }, [toast]);
 
   const showError = (error: unknown) => {
     const err = error as { code?: string; message?: string; response?: { data?: { error?: string } } };

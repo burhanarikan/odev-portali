@@ -6,13 +6,24 @@ import { FileText, Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 
 export const SubmissionsPage = () => {
-  const { data: submissions = [], isLoading } = useTeacherSubmissions();
+  const { data: submissions = [], isLoading, error } = useTeacherSubmissions();
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[280px] gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
         <p className="text-sm text-gray-500">Teslimler yükleniyor…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-gray-900">Teslimler</h1>
+        <div className="text-center py-12 text-red-600">
+          Teslimler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.
+        </div>
       </div>
     );
   }
