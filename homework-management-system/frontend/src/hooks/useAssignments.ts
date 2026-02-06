@@ -1,0 +1,104 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { studentApi, teacherApi } from '../api';
+import { Assignment, StudentAssignments, SimilarAssignment } from '../types';
+
+export const useStudentAssignments = () => {
+  return useQuery({
+    queryKey: ['student', 'assignments'],
+    queryFn: studentApi.getAssignments,
+    enabled: !!localStorage.getItem('token'),
+  });
+};
+
+export const useStudentAssignment = (id: string) => {
+  return useQuery({
+    queryKey: ['student', 'assignment', id],
+    queryFn: () => studentApi.getAssignmentById(id),
+    enabled: !!id && !!localStorage.getItem('token'),
+  });
+};
+
+export const useSubmitAssignment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: studentApi.submitAssignment,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student', 'assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['student', 'evaluations'] });
+    },
+  });
+};
+
+export const useTeacherAssignments = () => {
+  return useQuery({
+    queryKey: ['teacher', 'assignments'],
+    queryFn: teacherApi.getAssignments,
+    enabled: !!localStorage.getItem('token'),
+  });
+};
+
+export const useTeacherAssignment = (id: string) => {
+  return useQuery({
+    queryKey: ['teacher', 'assignment', id],
+    queryFn: () => teacherApi.getAssignmentById(id),
+    enabled: !!id && !!localStorage.getItem('token'),
+  });
+};
+
+export const useCreateAssignment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: teacherApi.createAssignment,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'assignments'] });
+    },
+  });
+};
+
+export const useUpdateAssignment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      teacherApi.updateAssignment(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'assignment', id] });
+    },
+  });
+};
+
+export const useDeleteAssignment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: teacherApi.deleteAssignment,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'assignments'] });
+    },
+  });
+};
+
+export const useCheckSimilarity = () => {
+  return useMutation({
+    mutationFn: teacherApi.checkSimilarity,
+  });
+};
+
+export const useAssignmentsByWeek = (weekNumber: number) => {
+  return useQuery({
+    queryKey: ['teacher', 'assignments', 'week', weekNumber],
+    queryFn: () => teacherApi.getAssignmentsByWeek(weekNumber),
+    enabled: !!weekNumber && !!localStorage.getItem('token'),
+  });
+};
+
+export const useAssignmentsByLevel = (levelId: string) => {
+  return useQuery({
+    queryKey: ['teacher', 'assignments', 'level', levelId],
+    queryFn: () => teacherApi.getAssignmentsByLevel(levelId),
+    enabled: !!levelId && !!localStorage.getItem('token'),
+  });
+};

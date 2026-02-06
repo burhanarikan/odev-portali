@@ -1,0 +1,241 @@
+import { prisma } from '../config/database';
+import { SubmissionInput } from '../utils/validators';
+import { createError } from '../middleware/errorHandler';
+
+export class StudentService {
+  async getStudentAssignments(studentId: string) {
+    const student = await prisma.student.findUnique({
+      where: { userId: studentId },
+      include: {
+        class: {
+          include: {
+            level: true,
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      throw createError('Student not found', 404);
+    }
+
+    const now = new Date();
+    
+    const assignments = await prisma.assignment.findMany({
+      where: {
+        levelId: student.class.levelId,
+        isDraft: false,
+      },
+      include: {
+        level: true,
+        teacher: {
+          include: {
+            user: true,
+          },
+        },
+        submissions: {
+          where: {
+            studentId: student.id,
+          },
+          include: {
+            evaluation: true,
+          },
+        },
+      },
+      orderBy: {
+        startDate: 'desc',
+      },
+    });
+
+    const active = assignments.filter(a => 
+      a.startDate <= now && a.dueDate >= now && 
+      a.submissions.length === 0
+    );
+
+    const upcoming = assignments.filter(a => 
+      a.startDate > now && a.submissions.length === 0
+    );
+
+    const past = assignments.filter(a => 
+      a.dueDate < now || a.submissions.length > 0
+    );
+
+    return {
+      active,
+      upcoming,
+      past,
+    };
+  }
+
+  async getAssignmentById(id: string, studentId: string) {
+    const student = await prisma.student.findUnique({
+      where: { userId: studentId },
+      include: {
+        class: {
+          include: {
+            level: true,
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      throw createError('Student not found', 404);
+    }
+
+    const assignment = await prisma.assignment.findFirst({
+      where: {
+        id,
+        levelId: student.class.levelId,
+        isDraft: false,
+      },
+      include: {
+        level: true,
+        teacher: {
+          include: {
+            user: true,
+          },
+        },
+        submissions: {
+          where: {
+            studentId: student.id,
+          },
+          include: {
+            evaluation: true,
+          },
+        },
+      },
+    });
+
+    if (!assignment) {
+      throw createError('Assignment not found', 404);
+    }
+
+    return assignment;
+  }
+
+  async submitAssignment(data: SubmissionInput, studentId: string) {
+    const student = await prisma.student.findUnique({
+      where: { userId: studentId },
+    });
+
+    if (!student) {
+      throw createError('Student not found', 404);
+    }
+
+    const assignment = await prisma.assignment.findUnique({
+      where: { id: data.assignmentId },
+    });
+
+    if (!assignment) {
+      throw createError('Assignment not found', 404);
+    }
+
+    const existingSubmission = await prisma.submission.findFirst({
+      where: {
+        assignmentId: data.assignmentId,
+        studentId: student.id,
+      },
+    });
+
+    if (existingSubmission) {
+      throw createError('Assignment already submitted', 409);
+    }
+
+    const now = new Date();
+    const isLate = assignment.dueDate < now;
+
+    return prisma.submission.create({
+      data: {
+        assignmentId: data.assignmentId,
+        studentId: student.id,
+        contentText: data.contentText,
+        attachments: JSON.stringify(data.attachments || []),
+        isLate,
+      },
+      include: {
+        assignment: {
+          include: {
+            level: true,
+            teacher: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getSubmission(assignmentId: string, studentId: string) {
+    const student = await prisma.student.findUnique({
+      where: { userId: studentId },
+    });
+
+    if (!student) {
+      throw createError('Student not found', 404);
+    }
+
+    const submission = await prisma.submission.findFirst({
+      where: {
+        assignmentId,
+        studentId: student.id,
+      },
+      include: {
+        assignment: {
+          include: {
+            level: true,
+            teacher: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+        evaluation: true,
+      },
+    });
+
+    if (!submission) {
+      throw createError('Submission not found', 404);
+    }
+
+    return submission;
+  }
+
+  async getEvaluations(studentId: string) {
+    const student = await prisma.student.findUnique({
+      where: { userId: studentId },
+    });
+
+    if (!student) {
+      throw createError('Student not found', 404);
+    }
+
+    return prisma.submission.findMany({
+      where: {
+        studentId: student.id,
+        evaluation: {
+          isNotNull: true,
+        },
+      },
+      include: {
+        assignment: {
+          include: {
+            level: true,
+            teacher: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+        evaluation: true,
+      },
+      orderBy: {
+        submittedAt: 'desc',
+      },
+    });
+  }
+}

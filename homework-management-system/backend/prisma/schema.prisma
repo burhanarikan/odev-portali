@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum TargetType {
+  CLASS
+  STUDENT
+  GROUP
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  student Student?
+  teacher Teacher?
+
+  @@map("users")
+}
+
+model Level {
+  id        String   @id @default(uuid())
+  name      String   @unique // A1, A2, B1, B2
+  sortOrder Int      @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  classes     Class[]
+  assignments Assignment[]
+
+  @@map("levels")
+}
+
+model Class {
+  id        String   @id @default(uuid())
+  name      String   // A, B, C
+  levelId   String   @map("level_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  level   Level    @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  students Student[]
+  assignmentTargets AssignmentTarget[]
+
+  @@unique([name, levelId])
+  @@map("classes")
+}
+
+model Student {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  classId        String   @map("class_id")
+  enrollmentDate DateTime @default(now()) @map("enrollment_date")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class             Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
+  submissions       Submission[]
+  assignmentTargets AssignmentTarget[]
+  groupMembers      GroupMember[]
+
+  @@map("students")
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+  groups      Group[]
+  evaluations Evaluation[]
+
+  @@map("teachers")
+}
+
+model Assignment {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  levelId     String   @map("level_id")
+  weekNumber  Int      @map("week_number")
+  createdBy   String   @map("created_by")
+  startDate   DateTime @map("start_date")
+  dueDate     DateTime @map("due_date")
+  isDraft     Boolean  @default(false) @map("is_draft")
+  attachments Json     @default("[]")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  level   Level    @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  teacher Teacher  @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  targets     AssignmentTarget[]
+  groups      Group[]
+  submissions Submission[]
+
+  @@map("assignments")
+}
+
+model AssignmentTarget {
+  id           String     @id @default(uuid())
+  assignmentId String     @map("assignment_id")
+  targetType   TargetType @map("target_type")
+  classId      String?    @map("class_id")
+  studentId    String?    @map("student_id")
+  groupId      String?    @map("group_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  class      Class?     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student    Student?   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group      Group?     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("assignment_targets")
+}
+
+model Group {
+  id           String   @id @default(uuid())
+  assignmentId String   @map("assignment_id")
+  name         String?
+  createdBy    String   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  assignment Assignment         @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  teacher    Teacher            @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  members    GroupMember[]
+  targets    AssignmentTarget[]
+  submissions Submission[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  groupId   String   @map("group_id")
+  studentId String   @map("student_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, studentId])
+  @@map("group_members")
+}
+
+model Submission {
+  id           String   @id @default(uuid())
+  assignmentId String   @map("assignment_id")
+  studentId    String?  @map("student_id")
+  groupId      String?  @map("group_id")
+  submittedAt  DateTime @default(now()) @map("submitted_at")
+  isLate       Boolean  @map("is_late")
+  contentText  String?  @db.Text @map("content_text")
+  attachments  Json     @default("[]")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  assignment Assignment  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    Student?    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group      Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  evaluation Evaluation?
+
+  @@map("submissions")
+}
+
+model Evaluation {
+  id           String   @id @default(uuid())
+  submissionId String   @unique @map("submission_id")
+  teacherId    String   @map("teacher_id")
+  score        Decimal? @db.Decimal(5, 2)
+  feedback     String?  @db.Text
+  accepted     Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  teacher    Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@map("evaluations")
+}
