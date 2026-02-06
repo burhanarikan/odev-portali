@@ -88,6 +88,7 @@ export const Login = () => {
                   id="email"
                   type="email"
                   placeholder="ornek@email.com"
+                  autoComplete="email"
                   {...loginForm.register('email')}
                 />
                 {loginForm.formState.errors.email && (
@@ -103,6 +104,7 @@ export const Login = () => {
                   id="password"
                   type="password"
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   {...loginForm.register('password')}
                 />
                 {loginForm.formState.errors.password && (
@@ -131,6 +133,7 @@ export const Login = () => {
                   id="name"
                   type="text"
                   placeholder="Ad Soyad"
+                  autoComplete="name"
                   {...registerForm.register('name')}
                 />
                 {registerForm.formState.errors.name && (
@@ -146,6 +149,7 @@ export const Login = () => {
                   id="reg-email"
                   type="email"
                   placeholder="ornek@email.com"
+                  autoComplete="email"
                   {...registerForm.register('email')}
                 />
                 {registerForm.formState.errors.email && (
@@ -161,6 +165,7 @@ export const Login = () => {
                   id="reg-password"
                   type="password"
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   {...registerForm.register('password')}
                 />
                 {registerForm.formState.errors.password && (
@@ -173,7 +178,7 @@ export const Login = () => {
               <div className="space-y-2">
                 <Label htmlFor="role">Rol</Label>
                 <Select onValueChange={(value) => registerForm.setValue('role', value as 'STUDENT' | 'TEACHER')}>
-                  <SelectTrigger id="role">
+                  <SelectTrigger id="role" aria-label="Rol seçin">
                     <SelectValue placeholder="Rol seçin" />
                   </SelectTrigger>
                   <SelectContent>

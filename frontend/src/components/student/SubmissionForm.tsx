@@ -74,12 +74,13 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
           id="contentText"
           placeholder="Ödevinizi buraya yazın..."
           className="min-h-[120px]"
+          autoComplete="off"
           {...form.register('contentText')}
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Dosya Ekle</Label>
+        <span className="text-sm font-medium leading-none">Dosya Ekle</span>
         <Card className="border-dashed">
           <CardContent className="p-6">
             <div className="text-center">
@@ -90,11 +91,13 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
                 </span>
                 <input
                   id="file-upload"
+                  name="attachments"
                   type="file"
                   multiple
                   className="hidden"
                   onChange={handleFileUpload}
                   accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.zip"
+                  autoComplete="off"
                 />
               </label>
               <p className="text-xs text-gray-500 mt-1">
@@ -107,7 +110,7 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
 
       {uploadedFiles.length > 0 && (
         <div className="space-y-2">
-          <Label>Yüklenen Dosyalar</Label>
+          <span className="text-sm font-medium leading-none">Yüklenen Dosyalar</span>
           <div className="space-y-2">
             {uploadedFiles.map((file, index) => (
               <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">

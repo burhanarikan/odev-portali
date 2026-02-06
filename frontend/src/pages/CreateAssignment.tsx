@@ -134,6 +134,7 @@ export const CreateAssignment = () => {
                 <Input
                   id="title"
                   placeholder="Ödev başlığını girin"
+                  autoComplete="off"
                   {...form.register('title')}
                 />
                 {form.formState.errors.title && (
@@ -171,6 +172,7 @@ export const CreateAssignment = () => {
                 id="description"
                 placeholder="Ödev açıklamasını girin"
                 className="min-h-[120px]"
+                autoComplete="off"
                 {...form.register('description')}
               />
             </div>
@@ -205,6 +207,7 @@ export const CreateAssignment = () => {
                 <Input
                   id="startDate"
                   type="datetime-local"
+                  autoComplete="off"
                   {...form.register('startDate')}
                 />
                 {form.formState.errors.startDate && (
@@ -219,6 +222,7 @@ export const CreateAssignment = () => {
                 <Input
                   id="dueDate"
                   type="datetime-local"
+                  autoComplete="off"
                   {...form.register('dueDate')}
                 />
                 {form.formState.errors.dueDate && (
@@ -231,14 +235,15 @@ export const CreateAssignment = () => {
 
             {/* Kime atanacak */}
             <div className="space-y-3 border-t pt-4">
-              <Label className="flex items-center gap-2">
+              <p className="text-sm font-medium leading-none flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Kime atanacak
-              </Label>
-              <div className="flex flex-wrap gap-4">
+              </p>
+              <div className="flex flex-wrap gap-4" role="radiogroup" aria-label="Kime atanacak">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
+                    id="target-level"
                     name="targetType"
                     checked={targetType === 'level'}
                     onChange={() => setTargetType('level')}
@@ -249,6 +254,7 @@ export const CreateAssignment = () => {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
+                    id="target-class"
                     name="targetType"
                     checked={targetType === 'class'}
                     onChange={() => setTargetType('class')}
@@ -260,6 +266,7 @@ export const CreateAssignment = () => {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
+                    id="target-students"
                     name="targetType"
                     checked={targetType === 'students'}
                     onChange={() => setTargetType('students')}
@@ -290,9 +297,11 @@ export const CreateAssignment = () => {
                   <p className="text-sm text-gray-600">Ödevi görecek öğrencileri seçin</p>
                   <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
                     {studentsInLevel.map((s) => (
-                      <label key={s.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <label key={s.id} htmlFor={`student-${s.id}`} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
                         <input
                           type="checkbox"
+                          id={`student-${s.id}`}
+                          name="studentIds"
                           checked={selectedStudentIds.includes(s.id)}
                           onChange={(e) => {
                             if (e.target.checked) setSelectedStudentIds((prev) => [...prev, s.id]);
