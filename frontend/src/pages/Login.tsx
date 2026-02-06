@@ -135,7 +135,6 @@ export const Login = () => {
                 <Label htmlFor="email">E-posta</Label>
                 <Input
                   id="email"
-                  name="email"
                   type="email"
                   placeholder="ornek@email.com"
                   autoComplete="username"
@@ -153,7 +152,6 @@ export const Login = () => {
                 <div className="relative">
                   <Input
                     id="password"
-                    name="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     autoComplete="current-password"
@@ -209,7 +207,6 @@ export const Login = () => {
                 <Label htmlFor="reg-email">E-posta</Label>
                 <Input
                   id="reg-email"
-                  name="email"
                   type="email"
                   placeholder="ornek@email.com"
                   autoComplete="email"
@@ -227,7 +224,6 @@ export const Login = () => {
                 <div className="relative">
                   <Input
                     id="reg-password"
-                    name="password"
                     type={showRegPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     autoComplete="new-password"
