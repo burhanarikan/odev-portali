@@ -31,27 +31,24 @@ export class SimilarityService {
     return cleaned;
   }
 
-  /** İki token eşleşir: aynı kelime veya aynı baş harf (Türkçe duyarlı). */
+  /**
+   * İki token eşleşir: tam aynı kelime veya biri diğerinin başı (prefix).
+   * Örn: "ö" / "ör" / "örn" → "örnek" ile eşleşir; "örna" → "örnek" ile eşleşmez.
+   */
   private tokenMatches(a: string, b: string): boolean {
     if (a === b) return true;
     if (!a.length || !b.length) return false;
-    const firstA = a.charAt(0).toLowerCase();
-    const firstB = b.charAt(0).toLowerCase();
-    return firstA === firstB;
+    return b.startsWith(a) || a.startsWith(b);
   }
 
   /**
-   * Kullanıcı metnindeki her kelime için: mevcut ödevde en az bir kelime eşleşiyor mu (tam veya baş harf)?
-   * Skor = eşleşen kullanıcı kelimesi sayısı / kullanıcı kelimesi sayısı.
-   * Yazdıkça sadece en az bir kelimesi eşleşen ödevler kalır (skor > 0).
+   * Skor: kullanıcı kelimelerinden kaçı mevcut ödevde (tam veya prefix) eşleşiyor.
    */
   private wordMatchScore(userTokens: string[], existingTokens: string[]): number {
     if (userTokens.length === 0) return 0;
-    const existingSet = existingTokens;
     let matched = 0;
     for (const u of userTokens) {
-      const hasMatch = existingSet.some((t) => this.tokenMatches(u, t));
-      if (hasMatch) matched += 1;
+      if (existingTokens.some((t) => this.tokenMatches(u, t))) matched += 1;
     }
     return matched / userTokens.length;
   }
@@ -91,22 +88,21 @@ export class SimilarityService {
       const existingText = `${assignment.title} ${assignment.description || ''}`.trim();
       const existingTokens = this.tokenize(existingText);
 
-      // Başlık + açıklamadaki tüm kelimeler; en az bir kelime tam veya baş harf eşleşirse skor > 0
+      // Tam veya prefix eşleşme: "ö"/"ör"/"örn" → "örnek" çıkar; "örna" → eşleşme bozulur, çıkmaz
       const score = this.wordMatchScore(newTokens, existingTokens);
+      if (score <= 0) continue;
 
-      if (score > 0) {
-        const targetsSummary = this.formatTargetsSummary(assignment.targets);
-        similar.push({
-          id: assignment.id,
-          title: assignment.title,
-          description: assignment.description,
-          teacherName: assignment.teacher.user.name,
-          levelName: assignment.level.name,
-          weekNumber: assignment.weekNumber,
-          similarityScore: Math.round(score * 100 * 100) / 100,
-          targetsSummary
-        });
-      }
+      const targetsSummary = this.formatTargetsSummary(assignment.targets);
+      similar.push({
+        id: assignment.id,
+        title: assignment.title,
+        description: assignment.description,
+        teacherName: assignment.teacher.user.name,
+        levelName: assignment.level.name,
+        weekNumber: assignment.weekNumber,
+        similarityScore: Math.round(score * 100 * 100) / 100,
+        targetsSummary
+      });
     }
 
     return similar.sort((a, b) => b.similarityScore - a.similarityScore);
