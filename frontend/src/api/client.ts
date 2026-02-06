@@ -7,6 +7,12 @@ const getBaseURL = () => {
   return import.meta.env.VITE_API_URL || '/api';
 };
 
+/** API base (e.g. https://xxx.onrender.com/api) → backend root (https://xxx.onrender.com) */
+export const getBackendRoot = () => {
+  const base = getBaseURL();
+  return base.replace(/\/api\/?$/, '') || base;
+};
+
 // Canlıda backend (örn. Render free) cold start 1–2 dk sürebilir
 const api = axios.create({
   baseURL: getBaseURL(),
@@ -37,5 +43,15 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/** Sayfa açılışında backend uyansın diye health ping (canlıda kullan) */
+export const pingBackendHealth = (timeoutMs = 120000): Promise<boolean> => {
+  const root = getBackendRoot();
+  if (import.meta.env.DEV) return Promise.resolve(true);
+  return axios
+    .get(`${root}/health`, { timeout: timeoutMs })
+    .then(() => true)
+    .catch(() => false);
+};
 
 export default api;

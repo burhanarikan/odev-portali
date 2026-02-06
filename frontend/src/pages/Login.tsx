@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLogin, useRegister } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
+import { pingBackendHealth } from '@/api/client';
 
 const loginSchema = z.object({
   email: z.string().email('Geçerli bir e-posta adresi girin'),
@@ -27,11 +28,28 @@ const registerSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 type RegisterFormData = z.infer<typeof registerSchema>;
 
+const isDev = import.meta.env.DEV;
+
 export const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [backendReady, setBackendReady] = useState(isDev);
   const { toast } = useToast();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
+
+  useEffect(() => {
+    if (isDev) return;
+    pingBackendHealth(120000).then((ok) => {
+      setBackendReady(true);
+      if (!ok) {
+        toast({
+          title: 'Sunucuya ulaşılamadı',
+          description: 'Giriş/kayıt yine de deneyebilirsiniz; bazen ikinci denemede çalışır.',
+          variant: 'destructive',
+        });
+      }
+    });
+  }, []);
 
   const showError = (error: unknown) => {
     const err = error as { code?: string; message?: string; response?: { data?: { error?: string } } };
@@ -66,6 +84,22 @@ export const Login = () => {
     });
   };
 
+  if (!backendReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 pb-8 text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="font-medium text-gray-900">Sunucuya bağlanılıyor</p>
+            <p className="text-sm text-gray-500 mt-1">
+              İlk açılışta 1–2 dakika sürebilir. Form hazır olunca otomatik açılacak.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
@@ -80,7 +114,7 @@ export const Login = () => {
             }
             {(loginMutation.isPending || registerMutation.isPending) && (
               <span className="block mt-2 text-amber-600 text-sm">
-                Sunucu uyanıyor olabilir, ilk istek 1–2 dakika sürebilir. Lütfen bekleyin.
+                İstek gönderiliyor…
               </span>
             )}
           </CardDescription>
