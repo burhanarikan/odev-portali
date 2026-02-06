@@ -37,7 +37,7 @@ export const Login = () => {
     const err = error as { code?: string; message?: string; response?: { data?: { error?: string } } };
     const isTimeout = err?.code === 'ECONNABORTED' || (typeof err?.message === 'string' && err.message.includes('timeout'));
     const msg = isTimeout
-      ? 'Sunucu yanıt vermiyor (zaman aşımı). Canlı sunucu uyanıyor olabilir; 30 saniye sonra tekrar deneyin.'
+      ? 'Sunucu yanıt vermiyor (zaman aşımı). Backend (Render) uyanıyor olabilir: 1–2 dakika bekleyip sayfayı yenileyin ve tekrar deneyin.'
       : err?.response?.data?.error || (error instanceof Error ? error.message : 'Bir hata oluştu. Lütfen tekrar deneyin.');
     toast({
       title: isLogin ? 'Giriş başarısız' : 'Kayıt başarısız',
@@ -78,6 +78,11 @@ export const Login = () => {
               ? 'Hesabınıza giriş yapın' 
               : 'Yeni hesap oluşturun'
             }
+            {(loginMutation.isPending || registerMutation.isPending) && (
+              <span className="block mt-2 text-amber-600 text-sm">
+                Sunucu uyanıyor olabilir, ilk istek 1–2 dakika sürebilir. Lütfen bekleyin.
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>

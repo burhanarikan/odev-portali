@@ -1,8 +1,8 @@
 import api from './client';
 import { LoginResponse, RegisterResponse, User } from '../types';
 
-// Giriş/kayıt cold start'ta daha uzun sürebilir
-const AUTH_TIMEOUT = 45000;
+// Giriş/kayıt: Render free tier bazen 1+ dakika uyanıyor
+const AUTH_TIMEOUT = 120000;
 
 export const authApi = {
   login: async (email: string, password: string) => {
