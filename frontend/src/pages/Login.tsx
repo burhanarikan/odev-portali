@@ -54,9 +54,15 @@ export const Login = () => {
   const showError = (error: unknown) => {
     const err = error as { code?: string; message?: string; response?: { data?: { error?: string } } };
     const isTimeout = err?.code === 'ECONNABORTED' || (typeof err?.message === 'string' && err.message.includes('timeout'));
-    const msg = isTimeout
-      ? 'Sunucu yanıt vermiyor (zaman aşımı). Backend (Render) uyanıyor olabilir: 1–2 dakika bekleyip sayfayı yenileyin ve tekrar deneyin.'
-      : err?.response?.data?.error || (error instanceof Error ? error.message : 'Bir hata oluştu. Lütfen tekrar deneyin.');
+    const isNetwork = err?.code === 'ERR_NETWORK' || !err?.response;
+    let msg: string;
+    if (isTimeout) {
+      msg = 'Sunucu yanıt vermiyor (zaman aşımı). Backend (Render) uyanıyor olabilir: 1–2 dakika bekleyip sayfayı yenileyin ve tekrar deneyin.';
+    } else if (isNetwork) {
+      msg = 'Ağ hatası: Backend adresi (VITE_API_URL) ve Render\'da CORS (FRONTEND_URL) doğru mu kontrol edin.';
+    } else {
+      msg = err?.response?.data?.error || (error instanceof Error ? error.message : 'Bir hata oluştu. Lütfen tekrar deneyin.');
+    }
     toast({
       title: isLogin ? 'Giriş başarısız' : 'Kayıt başarısız',
       description: msg,

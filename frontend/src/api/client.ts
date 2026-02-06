@@ -4,7 +4,12 @@ const getBaseURL = () => {
   if (import.meta.env.DEV) {
     return 'http://localhost:5050/api';
   }
-  return import.meta.env.VITE_API_URL || '/api';
+  const url = import.meta.env.VITE_API_URL || '/api';
+  // VITE_API_URL bazen sadece origin (https://xxx.onrender.com); /api ekle
+  if (url && !url.endsWith('/api') && !url.endsWith('/api/')) {
+    return url.replace(/\/?$/, '') + '/api';
+  }
+  return url;
 };
 
 /** API base (e.g. https://xxx.onrender.com/api) → backend root (https://xxx.onrender.com) */

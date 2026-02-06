@@ -19,10 +19,17 @@ const limiter = rateLimit({
 });
 
 app.use(helmet());
+const corsOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map((o) => o.trim())
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:5173'];
 app.use(cors({
-  origin: process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(',')
-    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:5173'],
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (corsOrigins.includes(origin)) return cb(null, true);
+    if (corsOrigins.some((o) => o === '*')) return cb(null, true);
+    if (origin.endsWith('.vercel.app')) return cb(null, true);
+    return cb(null, false);
+  },
   credentials: true,
 }));
 app.use(limiter);
