@@ -163,6 +163,16 @@ export const getLevels = async (_req: Request, res: Response, next: NextFunction
   }
 };
 
+export const getSubmissions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const submissions = await assignmentService.getSubmissionsForTeacher(req.user.userId);
+    res.json(submissions);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
 export const getStudents = async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const students = await prisma.student.findMany({

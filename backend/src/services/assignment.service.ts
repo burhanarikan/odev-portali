@@ -86,6 +86,31 @@ export class AssignmentService {
     return teacher.id;
   }
 
+  async getSubmissionsForTeacher(teacherUserId: string) {
+    const teacherId = await this.resolveTeacherId(teacherUserId);
+    const submissions = await prisma.submission.findMany({
+      where: {
+        assignment: { createdBy: teacherId },
+      },
+      include: {
+        assignment: {
+          select: {
+            title: true,
+            level: { select: { name: true } },
+          },
+        },
+        student: {
+          include: {
+            user: { select: { name: true, email: true } },
+          },
+        },
+        evaluation: true,
+      },
+      orderBy: { submittedAt: 'desc' },
+    });
+    return submissions;
+  }
+
   async getAssignments(teacherUserId?: string) {
     const teacherId = teacherUserId ? await this.resolveTeacherId(teacherUserId) : undefined;
     const where = teacherId ? { createdBy: teacherId } : {};

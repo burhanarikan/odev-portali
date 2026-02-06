@@ -10,6 +10,7 @@ import {
   getAssignmentsByLevel,
   getLevels,
   getStudents,
+  getSubmissions,
   createGroup,
   addStudentToGroup,
   removeStudentFromGroup,
@@ -24,6 +25,7 @@ router.use(authorize(['TEACHER', 'ADMIN']));
 
 router.get('/levels', getLevels);
 router.get('/students', getStudents);
+router.get('/submissions', getSubmissions);
 router.post('/assignments', createAssignment);
 router.get('/assignments', getAssignments);
 router.get('/assignments/:id', getAssignmentById);

@@ -40,6 +40,17 @@ Sistem aşağıdaki ana modelleri içerir:
 - **Çalıştırma adımları:** [CALISTIRMA.md](CALISTIRMA.md)
 - **Elle nasıl denersiniz:** [NASIL_DENENIR.md](NASIL_DENENIR.md)
 - **Otomatik testler:** [TEST.md](TEST.md) — `npm run test` (kökte)
+- **Canlıya alma (deploy):** [DEPLOY.md](DEPLOY.md) — Vercel + Render örneği
+
+## 📸 Ekran görüntüleri
+
+Projeyi çalıştırdıktan sonra aşağıdaki sayfalardan ekran görüntüsü alıp buraya ekleyebilirsiniz:
+
+- **Giriş sayfası** — Login / Kayıt formu
+- **Öğrenci paneli** — Aktif / gelecek / tamamlanan ödevler
+- **Öğretmen paneli** — Ödev listesi, Teslimler, Ödev oluşturma (kime atanacak seçimi)
+
+Örnek: `![Giriş](docs/screenshot-login.png)` (docs klasörüne screenshot’ları koyun.)
 
 ## 🚀 Kurulum
 

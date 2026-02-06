@@ -54,6 +54,14 @@ export const useTeacherAssignments = () => {
   });
 };
 
+export const useTeacherSubmissions = () => {
+  return useQuery({
+    queryKey: ['teacher', 'submissions'],
+    queryFn: teacherApi.getSubmissions,
+    enabled: !!localStorage.getItem('token'),
+  });
+};
+
 export const useTeacherAssignment = (id: string) => {
   return useQuery({
     queryKey: ['teacher', 'assignment', id],

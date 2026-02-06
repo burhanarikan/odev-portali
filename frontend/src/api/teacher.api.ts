@@ -101,4 +101,21 @@ export const teacherApi = {
     );
     return response.data;
   },
+
+  getSubmissions: async () => {
+    const response = await api.get<TeacherSubmission[]>('/teacher/submissions');
+    return response.data;
+  },
 };
+
+export interface TeacherSubmission {
+  id: string;
+  assignmentId: string;
+  studentId: string | null;
+  submittedAt: string;
+  isLate: boolean;
+  contentText: string | null;
+  assignment: { title: string; level?: { name: string } };
+  student: { user: { name: string; email: string } } | null;
+  evaluation: { score?: number; feedback?: string; accepted: boolean } | null;
+}
