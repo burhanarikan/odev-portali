@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/store/authStore';
+import { APP_VERSION, APP_UPDATED_AT } from '@/config/version';
 import { LayoutDashboard, FileText, Users, BarChart3, Inbox, Settings, Award } from 'lucide-react';
 
 const navigation = [
@@ -90,6 +91,14 @@ export const Sidebar = () => {
               </NavLink>
             ))}
           </nav>
+        </div>
+        <div className="flex-shrink-0 px-4 py-3 border-t border-gray-100">
+          <p className="text-xs text-gray-500">
+            <span className="font-medium text-gray-600">{APP_VERSION}</span>
+            <span className="mx-1">·</span>
+            <span>{APP_UPDATED_AT}</span>
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">Güncelleme</p>
         </div>
       </div>
     </div>

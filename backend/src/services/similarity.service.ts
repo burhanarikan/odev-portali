@@ -3,10 +3,13 @@ import { prisma } from '../config/database';
 export interface SimilarAssignment {
   id: string;
   title: string;
+  description: string | null;
   teacherName: string;
   levelName: string;
   weekNumber: number;
   similarityScore: number;
+  /** Örneğin: "Tüm seviye" veya "A Sınıfı" veya "Öğrenci: Ayşe, Mehmet" */
+  targetsSummary: string;
 }
 
 export class SimilarityService {
@@ -76,7 +79,6 @@ export class SimilarityService {
     const existingAssignments = await prisma.assignment.findMany({
       where: {
         levelId,
-        weekNumber,
         isDraft: false
       },
       include: {
@@ -85,7 +87,13 @@ export class SimilarityService {
             user: true
           }
         },
-        level: true
+        level: true,
+        targets: {
+          include: {
+            class: { select: { name: true } },
+            student: { include: { user: { select: { name: true } } } }
+          }
+        }
       }
     });
 
@@ -100,17 +108,32 @@ export class SimilarityService {
       const avgScore = (jaccard + cosine) / 2;
 
       if (avgScore >= threshold) {
+        const targetsSummary = this.formatTargetsSummary(assignment.targets);
         similar.push({
           id: assignment.id,
           title: assignment.title,
+          description: assignment.description,
           teacherName: assignment.teacher.user.name,
           levelName: assignment.level.name,
           weekNumber: assignment.weekNumber,
-          similarityScore: Math.round(avgScore * 100 * 100) / 100
+          similarityScore: Math.round(avgScore * 100 * 100) / 100,
+          targetsSummary
         });
       }
     }
 
     return similar.sort((a, b) => b.similarityScore - a.similarityScore);
+  }
+
+  private formatTargetsSummary(
+    targets: Array<{ targetType: string; class?: { name: string } | null; student?: { user: { name: string } } | null }>
+  ): string {
+    if (!targets || targets.length === 0) return 'Tüm seviye';
+    const classes = targets.filter(t => t.class).map(t => t.class!.name);
+    const students = targets.filter(t => t.student).map(t => t.student!.user.name);
+    const parts: string[] = [];
+    if (classes.length) parts.push(classes.join(', ') + ' sınıfı');
+    if (students.length) parts.push(students.length <= 3 ? 'Öğrenci: ' + students.join(', ') : `${students.length} öğrenci`);
+    return parts.length ? parts.join(' · ') : 'Tüm seviye';
   }
 }

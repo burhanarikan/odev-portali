@@ -210,18 +210,31 @@ export const CreateAssignment = () => {
                   ) : liveSimilarAssignments.length === 0 ? (
                     <p className="text-sm text-gray-500">Bu başlık ve seviyede benzer ödev bulunamadı.</p>
                   ) : (
-                    <ul className="space-y-2 max-h-48 overflow-y-auto">
+                    <ul className="space-y-3 max-h-[420px] overflow-y-auto">
                       {liveSimilarAssignments.map((a) => (
-                        <li key={a.id} className="flex justify-between items-start gap-2 p-2 rounded bg-white border border-amber-100">
-                          <div>
-                            <p className="font-medium text-gray-900">{a.title}</p>
-                            <p className="text-xs text-gray-600">
-                              {a.levelName} · {a.weekNumber}. Hafta · {a.teacherName}
-                            </p>
+                        <li key={a.id} className="p-3 rounded-lg bg-white border border-amber-100 space-y-2">
+                          <div className="flex justify-between items-start gap-2">
+                            <div>
+                              <p className="font-medium text-gray-900">{a.title}</p>
+                              <p className="text-xs text-gray-600">
+                                {a.levelName} · {a.weekNumber}. Hafta · {a.teacherName}
+                              </p>
+                            </div>
+                            <span className="text-xs font-medium text-amber-700 whitespace-nowrap">
+                              %{a.similarityScore} benzer
+                            </span>
                           </div>
-                          <span className="text-xs font-medium text-amber-700 whitespace-nowrap">
-                            %{a.similarityScore} benzer
-                          </span>
+                          {a.targetsSummary && (
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium text-gray-700">Kime atandı:</span> {a.targetsSummary}
+                            </p>
+                          )}
+                          {a.description && (
+                            <div className="text-xs text-gray-600 bg-gray-50 rounded p-2 max-h-20 overflow-y-auto">
+                              <span className="font-medium text-gray-700">İçerik:</span>{' '}
+                              {a.description.length > 200 ? a.description.slice(0, 200) + '…' : a.description}
+                            </div>
+                          )}
                         </li>
                       ))}
                     </ul>

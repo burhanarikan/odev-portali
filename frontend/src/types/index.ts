@@ -132,10 +132,13 @@ export interface Evaluation {
 export interface SimilarAssignment {
   id: string;
   title: string;
+  description?: string | null;
   teacherName: string;
   levelName: string;
   weekNumber: number;
   similarityScore: number;
+  /** Örn: "Tüm seviye" veya "A Sınıfı" veya "Öğrenci: X, Y" */
+  targetsSummary?: string;
 }
 
 export interface StudentAssignments {
