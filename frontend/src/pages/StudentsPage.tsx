@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -152,10 +153,12 @@ export const StudentsPage = () => {
                       </div>
                       
                       <div className="flex items-center space-x-4">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Detay
-                        </Button>
+                        <Link to={`/students/${student.id}`}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-2" />
+                            Detay
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </CardContent>

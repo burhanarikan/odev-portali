@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLogin, useRegister } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from 'lucide-react';
-import { pingBackendHealth } from '@/api/client';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { pingBackendHealth, getBaseURL } from '@/api/client';
 
 const loginSchema = z.object({
   email: z.string().email('Geçerli bir e-posta adresi girin'),
@@ -33,6 +33,8 @@ const isDev = import.meta.env.DEV;
 export const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [backendReady, setBackendReady] = useState(isDev);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const { toast } = useToast();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
@@ -59,7 +61,8 @@ export const Login = () => {
     if (isTimeout) {
       msg = 'Sunucu yanıt vermiyor (zaman aşımı). Backend (Render) uyanıyor olabilir: 1–2 dakika bekleyip sayfayı yenileyin ve tekrar deneyin.';
     } else if (isNetwork) {
-      msg = 'Ağ hatası: Backend adresi (VITE_API_URL) ve Render\'da CORS (FRONTEND_URL) doğru mu kontrol edin.';
+      const apiBase = getBaseURL();
+      msg = `Ağ hatası. Kontrol: 1) Vercel → Settings → Environment → VITE_API_URL = Render adresi (https://...onrender.com). 2) Render → Environment → FRONTEND_URL = Vercel adresiniz. Şu an istek gidiyor: ${apiBase}`;
     } else {
       msg = err?.response?.data?.error || (error instanceof Error ? error.message : 'Bir hata oluştu. Lütfen tekrar deneyin.');
     }
@@ -146,13 +149,24 @@ export const Login = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="password">Şifre</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  {...loginForm.register('password')}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="pr-10"
+                    {...loginForm.register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {loginForm.formState.errors.password && (
                   <p className="text-sm text-red-600">
                     {loginForm.formState.errors.password.message}
@@ -207,13 +221,24 @@ export const Login = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="reg-password">Şifre</Label>
-                <Input
-                  id="reg-password"
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  {...registerForm.register('password')}
-                />
+                <div className="relative">
+                  <Input
+                    id="reg-password"
+                    type={showRegPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    className="pr-10"
+                    {...registerForm.register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword((p) => !p)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    aria-label={showRegPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  >
+                    {showRegPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {registerForm.formState.errors.password && (
                   <p className="text-sm text-red-600">
                     {registerForm.formState.errors.password.message}

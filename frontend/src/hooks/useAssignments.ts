@@ -18,6 +18,14 @@ export const useStudentAssignment = (id: string) => {
   });
 };
 
+export const useStudentEvaluations = () => {
+  return useQuery({
+    queryKey: ['student', 'evaluations'],
+    queryFn: studentApi.getEvaluations,
+    enabled: !!localStorage.getItem('token'),
+  });
+};
+
 export const useSubmitAssignment = () => {
   const queryClient = useQueryClient();
 
@@ -101,6 +109,25 @@ export const useDeleteAssignment = () => {
     mutationFn: teacherApi.deleteAssignment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher', 'assignments'] });
+    },
+  });
+};
+
+export const useSubmitEvaluation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      submissionId,
+      data,
+    }: {
+      submissionId: string;
+      data: { score?: number; feedback?: string; accepted: boolean };
+    }) => teacherApi.submitEvaluation(submissionId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'assignment'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'submissions'] });
     },
   });
 };

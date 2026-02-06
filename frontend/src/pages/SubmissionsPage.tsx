@@ -10,8 +10,9 @@ export const SubmissionsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="flex flex-col items-center justify-center min-h-[280px] gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
+        <p className="text-sm text-gray-500">Teslimler yükleniyor…</p>
       </div>
     );
   }

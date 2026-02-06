@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { AssignmentService } from '../services/assignment.service';
-import { assignmentSchema } from '../utils/validators';
+import { EvaluationService } from '../services/evaluation.service';
+import { assignmentSchema, evaluationSchema } from '../utils/validators';
 import { errorHandler, AppError } from '../middleware/errorHandler';
 import { prisma } from '../config/database';
 
 const assignmentService = new AssignmentService();
+const evaluationService = new EvaluationService();
 
 export const createAssignment = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -198,5 +200,57 @@ export const getStudents = async (_req: Request, res: Response, next: NextFuncti
     res.json(list);
   } catch (error: unknown) {
     errorHandler(error as AppError, _req, res, next);
+  }
+};
+
+export const getStudentById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const student = await prisma.student.findUnique({
+      where: { id: id ?? '' },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        class: {
+          include: {
+            level: { select: { id: true, name: true } },
+          },
+        },
+        submissions: {
+          include: {
+            assignment: { select: { id: true, title: true, dueDate: true } },
+            evaluation: { select: { score: true, feedback: true, accepted: true } },
+          },
+          orderBy: { submittedAt: 'desc' },
+          take: 20,
+        },
+      },
+    });
+    if (!student) {
+      return res.status(404).json({ error: 'Öğrenci bulunamadı' });
+    }
+    res.json({
+      id: student.id,
+      userId: student.userId,
+      name: student.user.name,
+      email: student.user.email,
+      class: student.class ? { id: student.class.id, name: student.class.name, level: student.class.level } : null,
+      enrollmentDate: student.enrollmentDate,
+      createdAt: student.createdAt,
+      submissions: student.submissions,
+    });
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const submitEvaluation = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { submissionId } = req.params;
+    const validated = evaluationSchema.parse(req.body);
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const result = await evaluationService.submitEvaluation(submissionId ?? '', validated, req.user.userId);
+    res.json(result);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
   }
 };

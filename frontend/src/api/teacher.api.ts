@@ -17,6 +17,15 @@ export interface TeacherStudent {
   createdAt: string;
 }
 
+export interface TeacherStudentDetail extends TeacherStudent {
+  submissions: Array<{
+    id: string;
+    assignment: { id: string; title: string; dueDate: string };
+    evaluation: { score?: number; feedback?: string; accepted: boolean } | null;
+    submittedAt: string;
+  }>;
+}
+
 export const teacherApi = {
   getLevels: async () => {
     const response = await api.get<Level[]>('/teacher/levels');
@@ -25,6 +34,22 @@ export const teacherApi = {
 
   getStudents: async () => {
     const response = await api.get<TeacherStudent[]>('/teacher/students');
+    return response.data;
+  },
+
+  getStudentById: async (id: string) => {
+    const response = await api.get<TeacherStudentDetail>(`/teacher/students/${id}`);
+    return response.data;
+  },
+
+  submitEvaluation: async (
+    submissionId: string,
+    data: { score?: number; feedback?: string; accepted: boolean }
+  ) => {
+    const response = await api.post<unknown>(
+      `/teacher/submissions/${submissionId}/evaluation`,
+      data
+    );
     return response.data;
   },
 

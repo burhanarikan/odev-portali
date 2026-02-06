@@ -12,6 +12,8 @@ const getBaseURL = () => {
   return url;
 };
 
+export { getBaseURL };
+
 /** API base (e.g. https://xxx.onrender.com/api) → backend root (https://xxx.onrender.com) */
 export const getBackendRoot = () => {
   const base = getBaseURL();

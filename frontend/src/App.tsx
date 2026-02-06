@@ -7,9 +7,11 @@ import { TeacherDashboard } from '@/pages/TeacherDashboard';
 import { AssignmentDetails } from '@/pages/AssignmentDetails';
 import { CreateAssignment } from '@/pages/CreateAssignment';
 import { StudentsPage } from '@/pages/StudentsPage';
+import { StudentDetailPage } from '@/pages/StudentDetailPage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { SubmissionsPage } from '@/pages/SubmissionsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { EvaluationsPage } from '@/pages/EvaluationsPage';
 import { NotFound } from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -42,7 +44,6 @@ function App() {
         
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/assignments" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/evaluations" element={<Navigate to="/dashboard" replace />} />
 
         <Route path="/dashboard" element={
           <ProtectedRoute>
@@ -78,6 +79,14 @@ function App() {
           <Route index element={<StudentsPage />} />
         </Route>
 
+        <Route path="/students/:id" element={
+          <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<StudentDetailPage />} />
+        </Route>
+
         <Route path="/analytics" element={
           <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
             <Layout />
@@ -92,6 +101,14 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<SubmissionsPage />} />
+        </Route>
+
+        <Route path="/evaluations" element={
+          <ProtectedRoute allowedRole="STUDENT">
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<EvaluationsPage />} />
         </Route>
 
         <Route path="/settings" element={

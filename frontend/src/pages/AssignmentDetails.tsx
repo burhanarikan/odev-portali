@@ -1,11 +1,23 @@
-import { useParams, Link } from 'react-router-dom';
-import { useStudentAssignment, useTeacherAssignment } from '@/hooks/useAssignments';
+import { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useStudentAssignment, useTeacherAssignment, useSubmitEvaluation, useDeleteAssignment } from '@/hooks/useAssignments';
 import { useAuthStore } from '@/store/authStore';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { formatDate, formatRelativeTime } from '@/utils/formatDate';
-import { Calendar, Clock, User, FileText, Download, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Download, AlertCircle, ArrowLeft, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { SubmissionForm } from '@/components/student/SubmissionForm';
 
@@ -13,9 +25,14 @@ export const AssignmentDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
   const isStudent = user?.role === 'STUDENT';
+  const [expandedSubmissionId, setExpandedSubmissionId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const studentResult = useStudentAssignment(id ?? '');
   const teacherResult = useTeacherAssignment(id ?? '');
+  const submitEvaluationMutation = useSubmitEvaluation();
+  const deleteAssignmentMutation = useDeleteAssignment();
 
   const assignment = isStudent ? studentResult.data : teacherResult.data;
   const isLoading = isStudent ? studentResult.isLoading : teacherResult.isLoading;
@@ -42,23 +59,63 @@ export const AssignmentDetails = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Link to="/dashboard">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{assignment.title}</h1>
-          <p className="text-gray-600">
-            {assignment.level?.name} - {assignment.weekNumber}. Hafta
-          </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center space-x-4">
+          <Link to="/dashboard">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Geri
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{assignment.title}</h1>
+            <p className="text-gray-600">
+              {assignment.level?.name} - {assignment.weekNumber}. Hafta
+            </p>
+          </div>
+          {assignment.isDraft && (
+            <Badge variant="outline">Taslak</Badge>
+          )}
         </div>
-        {assignment.isDraft && (
-          <Badge variant="outline">Taslak</Badge>
+        {!isStudent && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-600 border-red-200 hover:bg-red-50"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Ödevi Sil
+          </Button>
         )}
       </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ödevi sil</DialogTitle>
+            <DialogDescription>
+              Bu ödevi silmek istediğinize emin misiniz? Tüm teslimler ve değerlendirmeler de silinecektir. Bu işlem geri alınamaz.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              İptal
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteAssignmentMutation.isPending}
+              onClick={async () => {
+                await deleteAssignmentMutation.mutateAsync(assignment.id);
+                setDeleteDialogOpen(false);
+                navigate('/dashboard');
+              }}
+            >
+              {deleteAssignmentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sil'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -200,37 +257,183 @@ export const AssignmentDetails = () => {
           </Card>
 
           {!isStudent && assignment.submissions && assignment.submissions.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Teslimler</CardTitle>
-                <CardDescription>
-                  {assignment.submissions.length} öğrenci teslim etti
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {assignment.submissions.map((submission) => (
-                    <div key={submission.id} className="flex items-center justify-between p-2 border rounded">
-                      <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm">{submission.student?.user?.name}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {submission.isLate && (
-                          <Badge variant="destructive" className="text-xs">Gecikmiş</Badge>
-                        )}
-                        {submission.evaluation && (
-                          <Badge variant="secondary" className="text-xs">Değerlendirildi</Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <SubmissionListCard
+              submissions={assignment.submissions}
+              expandedId={expandedSubmissionId}
+              onToggleExpand={setExpandedSubmissionId}
+              onSubmitEvaluation={submitEvaluationMutation.mutateAsync}
+              isSubmitting={submitEvaluationMutation.isPending}
+              onSuccess={() => {
+                teacherResult.refetch();
+              }}
+            />
           )}
         </div>
       </div>
     </div>
   );
+}
+
+type SubmissionItem = {
+  id: string;
+  submittedAt: string;
+  isLate: boolean;
+  contentText?: string | null;
+  evaluation?: { score?: number; feedback?: string; accepted: boolean } | null;
+  student?: { user?: { name: string } } | null;
 };
+
+function SubmissionListCard({
+  submissions,
+  expandedId,
+  onToggleExpand,
+  onSubmitEvaluation,
+  isSubmitting,
+  onSuccess,
+}: {
+  submissions: SubmissionItem[];
+  expandedId: string | null;
+  onToggleExpand: (id: string | null) => void;
+  onSubmitEvaluation: (params: {
+    submissionId: string;
+    data: { score?: number; feedback?: string; accepted: boolean };
+  }) => Promise<unknown>;
+  isSubmitting: boolean;
+  onSuccess: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Teslimler</CardTitle>
+        <CardDescription>
+          {submissions.length} öğrenci teslim etti
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {submissions.map((sub) => (
+            <div key={sub.id} className="border rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => onToggleExpand(expandedId === sub.id ? null : sub.id)}
+                className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50"
+              >
+                <div className="flex items-center space-x-2">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">{sub.student?.user?.name ?? 'Öğrenci'}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {sub.isLate && (
+                    <Badge variant="destructive" className="text-xs">Gecikmiş</Badge>
+                  )}
+                  {sub.evaluation && (
+                    <Badge variant="secondary" className="text-xs">
+                      {sub.evaluation.score != null ? `${sub.evaluation.score}/100` : 'Değerlendirildi'}
+                    </Badge>
+                  )}
+                  {expandedId === sub.id ? (
+                    <ChevronUp className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  )}
+                </div>
+              </button>
+              {expandedId === sub.id && (
+                <SubmissionEvaluationForm
+                  submission={sub}
+                  onSubmit={async (data) => {
+                    await onSubmitEvaluation({ submissionId: sub.id, data });
+                    onSuccess();
+                    onToggleExpand(null);
+                  }}
+                  isSubmitting={isSubmitting}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SubmissionEvaluationForm({
+  submission,
+  onSubmit,
+  isSubmitting,
+}: {
+  submission: SubmissionItem;
+  onSubmit: (data: { score?: number; feedback?: string; accepted: boolean }) => Promise<void>;
+  isSubmitting: boolean;
+}) {
+  const [score, setScore] = useState<string>(
+    submission.evaluation?.score != null ? String(submission.evaluation.score) : ''
+  );
+  const [feedback, setFeedback] = useState<string>(submission.evaluation?.feedback ?? '');
+  const [accepted, setAccepted] = useState<boolean>(submission.evaluation?.accepted ?? false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const numScore = score.trim() === '' ? undefined : Number(score);
+    if (numScore != null && (numScore < 0 || numScore > 100)) return;
+    await onSubmit({
+      score: numScore,
+      feedback: feedback.trim() || undefined,
+      accepted,
+    });
+  };
+
+  return (
+    <div className="p-4 pt-0 border-t bg-gray-50/50 space-y-4">
+      {submission.contentText && (
+        <div>
+          <Label className="text-xs text-gray-500">Teslim edilen metin</Label>
+          <div className="mt-1 p-3 bg-white border rounded text-sm text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto">
+            {submission.contentText}
+          </div>
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <Label htmlFor={`score-${submission.id}`}>Puan (0-100)</Label>
+          <Input
+            id={`score-${submission.id}`}
+            type="number"
+            min={0}
+            max={100}
+            step={0.5}
+            value={score}
+            onChange={(e) => setScore(e.target.value)}
+            className="mt-1"
+          />
+        </div>
+        <div>
+          <Label htmlFor={`feedback-${submission.id}`}>Geri bildirim</Label>
+          <Textarea
+            id={`feedback-${submission.id}`}
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            rows={3}
+            className="mt-1"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id={`accepted-${submission.id}`}
+            checked={accepted}
+            onChange={(e) => setAccepted(e.target.checked)}
+            className="rounded border-gray-300"
+          />
+          <Label htmlFor={`accepted-${submission.id}`} className="font-normal">
+            Teslim kabul edildi
+          </Label>
+        </div>
+        <Button type="submit" disabled={isSubmitting} className="gap-2">
+          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+          Kaydet
+        </Button>
+      </form>
+    </div>
+  );
+}
