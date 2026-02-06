@@ -34,13 +34,14 @@ export const Login = () => {
   const registerMutation = useRegister();
 
   const showError = (error: unknown) => {
-    const msg =
-      error && typeof error === 'object' && 'response' in error
-        ? (error as { response?: { data?: { error?: string }; status?: number } }).response?.data?.error
-        : null;
+    const err = error as { code?: string; message?: string; response?: { data?: { error?: string } } };
+    const isTimeout = err?.code === 'ECONNABORTED' || (typeof err?.message === 'string' && err.message.includes('timeout'));
+    const msg = isTimeout
+      ? 'Sunucu yanıt vermiyor (zaman aşımı). Canlı sunucu uyanıyor olabilir; 30 saniye sonra tekrar deneyin.'
+      : err?.response?.data?.error || (error instanceof Error ? error.message : 'Bir hata oluştu. Lütfen tekrar deneyin.');
     toast({
       title: isLogin ? 'Giriş başarısız' : 'Kayıt başarısız',
-      description: msg || (error instanceof Error ? error.message : 'Bir hata oluştu. Lütfen tekrar deneyin.'),
+      description: msg,
       variant: 'destructive',
     });
   };

@@ -7,9 +7,10 @@ const getBaseURL = () => {
   return import.meta.env.VITE_API_URL || '/api';
 };
 
+// Canlıda backend (örn. Render) cold start'ta 30+ sn sürebilir
 const api = axios.create({
   baseURL: getBaseURL(),
-  timeout: 10000,
+  timeout: 35000,
 });
 
 api.interceptors.request.use(
