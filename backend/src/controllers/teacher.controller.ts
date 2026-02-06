@@ -22,7 +22,9 @@ export const createAssignment = async (req: Request, res: Response, next: NextFu
 export const getAssignments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-    const assignments = await assignmentService.getAssignments(req.user.userId);
+    // Yönetici tüm ödevleri görür (kim ne vermiş takibi)
+    const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
+    const assignments = await assignmentService.getAssignments(teacherUserId);
     res.json(assignments);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);

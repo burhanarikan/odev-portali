@@ -187,6 +187,58 @@ export class AnalyticsService {
     };
   }
 
+  /** Yönetim: Tüm öğrencilerin ödev teslim durumu (ADMIN) */
+  async getAllStudentsProgress(): Promise<Array<{
+    studentId: string;
+    name: string;
+    email: string;
+    className: string;
+    levelName: string;
+    totalAssignments: number;
+    submittedAssignments: number;
+    completionRate: number;
+  }>> {
+    const students = await prisma.student.findMany({
+      include: {
+        user: { select: { name: true, email: true } },
+        class: {
+          include: {
+            level: { select: { name: true, id: true } },
+          },
+        },
+        submissions: { select: { id: true } },
+      },
+    });
+
+    const levelIds = [...new Set(students.map((s) => s.class?.levelId).filter(Boolean))] as string[];
+    const countsByLevel = await Promise.all(
+      levelIds.map(async (levelId) => {
+        const count = await prisma.assignment.count({
+          where: { levelId, isDraft: false },
+        });
+        return { levelId, count };
+      })
+    );
+    const totalByLevel = Object.fromEntries(countsByLevel.map((c) => [c.levelId, c.count]));
+
+    return students.map((s) => {
+      const levelId = s.class?.levelId;
+      const totalAssignments = levelId ? totalByLevel[levelId] ?? 0 : 0;
+      const submittedAssignments = s.submissions.length;
+      const completionRate = totalAssignments > 0 ? (submittedAssignments / totalAssignments) * 100 : 0;
+      return {
+        studentId: s.id,
+        name: s.user.name,
+        email: s.user.email,
+        className: s.class?.name ?? '—',
+        levelName: s.class?.level?.name ?? '—',
+        totalAssignments,
+        submittedAssignments,
+        completionRate,
+      };
+    });
+  }
+
   async getTeacherPerformance(teacherId: string) {
     const assignments = await prisma.assignment.findMany({
       where: { createdBy: teacherId },

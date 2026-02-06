@@ -65,11 +65,11 @@ function App() {
 
         <Route path="/assignments/:id" element={
           <ProtectedRoute>
-            <Layout />
+            <Layout>
+              <AssignmentDetails />
+            </Layout>
           </ProtectedRoute>
-        }>
-          <Route index element={<AssignmentDetails />} />
-        </Route>
+        } />
 
         <Route path="/students" element={
           <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>

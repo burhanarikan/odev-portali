@@ -15,4 +15,20 @@ export const analyticsApi = {
     const response = await api.get('/analytics/teacher-performance');
     return response.data;
   },
+
+  getStudentsProgress: async () => {
+    const response = await api.get<StudentsProgressItem[]>('/analytics/students-progress');
+    return response.data;
+  },
 };
+
+export interface StudentsProgressItem {
+  studentId: string;
+  name: string;
+  email: string;
+  className: string;
+  levelName: string;
+  totalAssignments: number;
+  submittedAssignments: number;
+  completionRate: number;
+}

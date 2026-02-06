@@ -1,13 +1,16 @@
 import { useTeacherAssignments } from '@/hooks/useAssignments';
+import { useAuthStore } from '@/store/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate, isOverdue } from '@/utils/formatDate';
-import { Calendar, Clock, FileText, Users, Plus } from 'lucide-react';
+import { Calendar, Clock, FileText, Users, Plus, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 export const TeacherDashboard = () => {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN';
   const { data: assignments, isLoading, error } = useTeacherAssignments();
 
   if (isLoading) {
@@ -51,27 +54,33 @@ export const TeacherDashboard = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Öğretmen Paneli</h1>
-          <p className="text-gray-600">Ödevlerinizi yönetin ve değerlendirin</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isAdmin ? 'Yönetim – Tüm Ödevler' : 'Öğretmen Paneli'}
+          </h1>
+          <p className="text-gray-600">
+            {isAdmin ? 'Hangi hoca ne ödev vermiş; ödev ve teslim takibi' : 'Ödevlerinizi yönetin ve değerlendirin'}
+          </p>
         </div>
-        <Link to="/assignments/create">
-          <Button className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>Yeni Ödev</span>
-          </Button>
-        </Link>
+        {!isAdmin && (
+          <Link to="/assignments/create">
+            <Button className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Yeni Ödev</span>
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Ödev</CardTitle>
+            <CardTitle className="text-sm font-medium">{isAdmin ? 'Sistemdeki Ödev' : 'Toplam Ödev'}</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalAssignments}</div>
             <p className="text-xs text-muted-foreground">
-              Tüm ödevleriniz
+              {isAdmin ? 'Tüm ödevler' : 'Tüm ödevleriniz'}
             </p>
           </CardContent>
         </Card>
@@ -110,35 +119,43 @@ export const TeacherDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{totalSubmissions}</div>
             <p className="text-xs text-muted-foreground">
-              Öğrenci teslimleri
+              {isAdmin ? 'Toplam teslim' : 'Öğrenci teslimleri'}
             </p>
           </CardContent>
         </Card>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Son Ödevler</h2>
-        {assignments?.length === 0 ? (
+        <h2 className="text-lg font-semibold text-gray-900">{isAdmin ? 'Tüm Ödevler (hoca bilgisiyle)' : 'Son Ödevler'}</h2>
+            {assignments?.length === 0 ? (
           <Card>
             <CardContent className="text-center py-8">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">Henüz ödev oluşturmadınız</p>
-              <Link to="/assignments/create">
-                <Button>İlk Ödevi Oluştur</Button>
-              </Link>
+              <p className="text-gray-500 mb-4">{isAdmin ? 'Henüz ödev yok' : 'Henüz ödev oluşturmadınız'}</p>
+              {!isAdmin && (
+                <Link to="/assignments/create">
+                  <Button>İlk Ödevi Oluştur</Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {assignments?.slice(0, 6).map((assignment) => (
+            {assignments?.slice(0, isAdmin ? 50 : 6).map((assignment) => (
               <Card key={assignment.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{assignment.title}</CardTitle>
                     {getStatusBadge(assignment)}
                   </div>
-                  <CardDescription>
-                    {assignment.level?.name} - {assignment.weekNumber}. Hafta
+                  <CardDescription className="space-y-0.5">
+                    <span>{assignment.level?.name} – {assignment.weekNumber}. Hafta</span>
+                    {isAdmin && assignment.teacher?.user && (
+                      <span className="flex items-center gap-1 mt-1 text-gray-600">
+                        <User className="h-3.5 w-3.5" />
+                        {assignment.teacher.user.name}
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

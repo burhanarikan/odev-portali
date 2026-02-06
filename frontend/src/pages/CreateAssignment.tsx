@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,11 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCreateAssignment, useCheckSimilarity, useLevels, useTeacherStudents } from '@/hooks/useAssignments';
+import { useCreateAssignment, useLevels, useTeacherStudents } from '@/hooks/useAssignments';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, AlertTriangle, Users } from 'lucide-react';
+import { teacherApi } from '@/api/teacher.api';
+import { ArrowLeft, Users, FileText } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import type { SimilarAssignment } from '@/types';
 
 const assignmentSchema = z.object({
   title: z.string().min(1, 'Başlık gereklidir'),
@@ -30,11 +32,10 @@ export const CreateAssignment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const createMutation = useCreateAssignment();
-  const similarityMutation = useCheckSimilarity();
   const { data: levels = [], isLoading: levelsLoading } = useLevels();
   const { data: studentsList = [] } = useTeacherStudents();
-  const [showSimilarityWarning, setShowSimilarityWarning] = useState(false);
-  const [similarAssignments, setSimilarAssignments] = useState<import('@/types').SimilarAssignment[]>([]);
+  const [liveSimilarAssignments, setLiveSimilarAssignments] = useState<SimilarAssignment[]>([]);
+  const [liveSimilarLoading, setLiveSimilarLoading] = useState(false);
   type TargetType = 'level' | 'class' | 'students';
   const [targetType, setTargetType] = useState<TargetType>('level');
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -49,6 +50,34 @@ export const CreateAssignment = () => {
   });
 
   const levelId = form.watch('levelId');
+  const title = form.watch('title');
+  const weekNumber = form.watch('weekNumber');
+  const description = form.watch('description');
+
+  // Yazarken benzer ödevleri canlı ara (debounce)
+  useEffect(() => {
+    if (!title?.trim() || title.trim().length < 2 || !levelId) {
+      setLiveSimilarAssignments([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      setLiveSimilarLoading(true);
+      teacherApi
+        .checkSimilarity({
+          title: title.trim(),
+          description: description ?? '',
+          levelId,
+          weekNumber: weekNumber || 1,
+        })
+        .then((res) => {
+          setLiveSimilarAssignments(res.similarAssignments ?? []);
+        })
+        .catch(() => setLiveSimilarAssignments([]))
+        .finally(() => setLiveSimilarLoading(false));
+    }, 400);
+    return () => clearTimeout(t);
+  }, [title, description, levelId, weekNumber]);
+
   const studentsInLevel = levelId
     ? studentsList.filter((s) => s.class?.level?.id === levelId)
     : [];
@@ -58,8 +87,6 @@ export const CreateAssignment = () => {
   }, []);
 
   const onSubmit = async (data: AssignmentFormData) => {
-    console.log('Form submit edildi:', data);
-    // Doğrudan ödev oluştur - similarity check'i tamamen kaldır
     createAssignment(data);
   };
 
@@ -95,13 +122,6 @@ export const CreateAssignment = () => {
         });
       },
     });
-  };
-
-  const proceedAnyway = () => {
-    const data = form.getValues();
-    setShowSimilarityWarning(false);
-    setSimilarAssignments([]);
-    createAssignment(data);
   };
 
   return (
@@ -165,6 +185,50 @@ export const CreateAssignment = () => {
                 )}
               </div>
             </div>
+
+            {/* Benzer ödevler - başlık yazarken canlı listele */}
+            {(title?.trim().length >= 2 && levelId) && (
+              <Card className={liveSimilarAssignments.length > 0 ? 'border-amber-200 bg-amber-50/50' : 'border-gray-200'}>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    {liveSimilarLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileText className="h-4 w-4" />
+                    )}
+                    Benzer ödevler
+                    {!liveSimilarLoading && liveSimilarAssignments.length > 0 && (
+                      <span className="text-gray-600 text-xs font-normal">
+                        — Farklı hocalar aynı başlığı kullanabilir; sadece bilgi amaçlı
+                      </span>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {liveSimilarLoading ? (
+                    <p className="text-sm text-gray-500">Kontrol ediliyor…</p>
+                  ) : liveSimilarAssignments.length === 0 ? (
+                    <p className="text-sm text-gray-500">Bu başlık ve seviyede benzer ödev bulunamadı.</p>
+                  ) : (
+                    <ul className="space-y-2 max-h-48 overflow-y-auto">
+                      {liveSimilarAssignments.map((a) => (
+                        <li key={a.id} className="flex justify-between items-start gap-2 p-2 rounded bg-white border border-amber-100">
+                          <div>
+                            <p className="font-medium text-gray-900">{a.title}</p>
+                            <p className="text-xs text-gray-600">
+                              {a.levelName} · {a.weekNumber}. Hafta · {a.teacherName}
+                            </p>
+                          </div>
+                          <span className="text-xs font-medium text-amber-700 whitespace-nowrap">
+                            %{a.similarityScore} benzer
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="description">Açıklama</Label>
@@ -333,7 +397,7 @@ export const CreateAssignment = () => {
                 type="submit" 
                 disabled={false}
               >
-                {createMutation.isPending || similarityMutation.isPending ? (
+                {createMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 {form.watch('isDraft') ? 'Taslak Kaydet' : 'Ödevi Yayınla'}
@@ -347,51 +411,6 @@ export const CreateAssignment = () => {
         </CardContent>
       </Card>
 
-      {showSimilarityWarning && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-yellow-800">
-              <AlertTriangle className="h-5 w-5" />
-              <span>Benzer Ödev Uyarısı</span>
-            </CardTitle>
-            <CardDescription>
-              Bu ödevle benzer ödevler zaten mevcut
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              {similarAssignments.map((assignment) => (
-                <div key={assignment.id} className="p-3 bg-white rounded border">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">{assignment.title}</p>
-                      <p className="text-sm text-gray-600">
-                        {assignment.levelName} - {assignment.weekNumber}. Hafta
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Öğretmen: {assignment.teacherName}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-yellow-600">
-                        %{assignment.similarityScore} benzerlik
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex space-x-4">
-              <Button onClick={proceedAnyway} variant="default">
-                Yine de Devam Et
-              </Button>
-              <Button onClick={() => { setShowSimilarityWarning(false); setSimilarAssignments([]); }} variant="outline">
-                İptal Et
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

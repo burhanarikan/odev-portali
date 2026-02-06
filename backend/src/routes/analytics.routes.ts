@@ -3,6 +3,7 @@ import {
   getDashboardStats,
   getStudentProgress,
   getTeacherPerformance,
+  getAllStudentsProgress,
 } from '../controllers/analytics.controller';
 import { authenticate, authorize } from '../middleware/auth';
 
@@ -13,5 +14,6 @@ router.use(authenticate);
 router.get('/dashboard', getDashboardStats);
 router.get('/student-progress/:studentId', authorize(['TEACHER', 'ADMIN']), getStudentProgress);
 router.get('/teacher-performance', authorize(['TEACHER', 'ADMIN']), getTeacherPerformance);
+router.get('/students-progress', authorize(['ADMIN']), getAllStudentsProgress);
 
 export default router;

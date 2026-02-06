@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate, isOverdue, isStarted } from '@/utils/formatDate';
-import { Calendar, Clock, FileText, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, FileText, CheckCircle, ClipboardList } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -48,12 +48,44 @@ export const StudentDashboard = () => {
     return <Badge className="bg-blue-100 text-blue-800">Aktif</Badge>;
   };
 
+  const activeCount = assignments?.active?.length || 0;
+  const pastCount = assignments?.past?.length || 0;
+  const submittedCount = assignments?.active?.filter((a) => a.submissions && a.submissions.length > 0).length || 0;
+  const pastSubmittedCount = assignments?.past?.filter((a) => a.submissions && a.submissions.length > 0).length || 0;
+  const totalDue = activeCount + pastCount;
+  const totalSubmitted = submittedCount + pastSubmittedCount;
+  const pendingCount = activeCount - submittedCount;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Öğrenci Paneli</h1>
         <p className="text-gray-600">Ödevlerinizi görüntüleyin ve teslim edin</p>
       </div>
+
+      {/* Ödev durumum özeti */}
+      <Card className="border-blue-100 bg-blue-50/30">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            Ödev durumum
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4 items-baseline">
+            <span className="text-2xl font-bold text-gray-900">{totalSubmitted} teslim</span>
+            <span className="text-gray-600">/ toplam {totalDue} ödev</span>
+            {pendingCount > 0 && (
+              <span className="text-amber-700 text-sm font-medium">
+                · {pendingCount} ödev bekliyor
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Kur sonunda özet: Kaç ödev verildi, kaçını teslim ettiniz
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
@@ -62,7 +94,7 @@ export const StudentDashboard = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{assignments?.active?.length || 0}</div>
+            <div className="text-2xl font-bold">{activeCount}</div>
             <p className="text-xs text-muted-foreground">
               Teslim edilmesi gereken ödevler
             </p>
@@ -88,7 +120,7 @@ export const StudentDashboard = () => {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{assignments?.past?.length || 0}</div>
+            <div className="text-2xl font-bold">{pastCount}</div>
             <p className="text-xs text-muted-foreground">
               Teslim edilen ödevler
             </p>

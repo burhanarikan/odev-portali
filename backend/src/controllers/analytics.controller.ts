@@ -32,3 +32,12 @@ export const getTeacherPerformance = async (req: Request, res: Response, next: N
     errorHandler(error as AppError, req, res, next);
   }
 };
+
+export const getAllStudentsProgress = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const list = await analyticsService.getAllStudentsProgress();
+    res.json(list);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, _req, res, next);
+  }
+};

@@ -38,19 +38,41 @@ export const AssignmentDetails = () => {
   const isLoading = isStudent ? studentResult.isLoading : teacherResult.isLoading;
   const error = isStudent ? studentResult.error : teacherResult.error;
 
+  if (!id?.trim()) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <p className="text-gray-600 font-medium">Ödev adresi geçersiz</p>
+          <Link to="/dashboard" className="mt-4">
+            <Button variant="outline">Ana Sayfaya Dön</Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex flex-col items-center justify-center min-h-[320px] gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
+        <p className="text-sm text-gray-500">Ödev yükleniyor…</p>
       </div>
     );
   }
 
   if (error || !assignment) {
     return (
-      <div className="text-center text-red-600">
-        Ödev yüklenirken bir hata oluştu.
-      </div>
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <p className="text-red-600 font-medium">Ödev yüklenirken bir hata oluştu.</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Bu ödev size atanmamış olabilir veya artık mevcut olmayabilir.
+          </p>
+          <Link to="/dashboard" className="mt-4">
+            <Button variant="outline">Ana Sayfaya Dön</Button>
+          </Link>
+        </CardContent>
+      </Card>
     );
   }
 

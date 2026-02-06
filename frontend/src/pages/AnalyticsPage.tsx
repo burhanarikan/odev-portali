@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { analyticsApi } from '@/api';
+import { analyticsApi, type StudentsProgressItem } from '@/api';
+import { useAuthStore } from '@/store/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -10,14 +11,23 @@ import {
   Activity,
   BarChart3,
   Calendar,
+  ClipboardList,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
+import { Link } from 'react-router-dom';
 
 export const AnalyticsPage = () => {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN';
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: analyticsApi.getDashboardStats,
+  });
+  const { data: studentsProgress = [], isLoading: progressLoading } = useQuery({
+    queryKey: ['analytics', 'students-progress'],
+    queryFn: analyticsApi.getStudentsProgress,
+    enabled: isAdmin,
   });
 
   if (isLoading) {
@@ -169,6 +179,64 @@ export const AnalyticsPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Yönetim: Öğrenci takibi – kim kaç ödev teslim etmiş */}
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <ClipboardList className="h-5 w-5" />
+              <span>Öğrenci takibi</span>
+            </CardTitle>
+            <CardDescription>
+              Hangi öğrenci kaç ödev teslim etmiş; düzenli yapan / yapmayan takibi
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {progressLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 font-medium">Öğrenci</th>
+                      <th className="text-left py-2 font-medium">Sınıf / Seviye</th>
+                      <th className="text-right py-2 font-medium">Teslim</th>
+                      <th className="text-right py-2 font-medium">Tamamlama</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(studentsProgress as StudentsProgressItem[]).map((row) => (
+                      <tr key={row.studentId} className="border-b hover:bg-gray-50">
+                        <td className="py-2">
+                          <Link to={`/students/${row.studentId}`} className="text-blue-600 hover:underline font-medium">
+                            {row.name}
+                          </Link>
+                          <p className="text-xs text-gray-500">{row.email}</p>
+                        </td>
+                        <td className="py-2">
+                          {row.className} · {row.levelName}
+                        </td>
+                        <td className="py-2 text-right">
+                          {row.submittedAssignments} / {row.totalAssignments}
+                        </td>
+                        <td className="py-2 text-right">
+                          <Badge variant={row.completionRate >= 80 ? 'default' : row.completionRate >= 50 ? 'secondary' : 'destructive'}>
+                            %{Math.round(row.completionRate)}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Son Aktiviteler */}
       <Card>

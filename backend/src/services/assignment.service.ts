@@ -16,16 +16,17 @@ export class AssignmentService {
       throw createError('Teacher not found', 404);
     }
 
-    // Aynı öğretmen, aynı seviye ve aynı başlıkta ödev var mı? (tekrar ödev engelleme)
+    // Aynı öğretmen + aynı seviye + aynı başlık + aynı hafta = tam tekrar (engelle). Farklı hocalar veya farklı hafta aynı başlığı kullanabilir.
     const existing = await prisma.assignment.findFirst({
       where: {
         createdBy: teacher.id,
         levelId: data.levelId,
         title: data.title.trim(),
+        weekNumber: data.weekNumber,
       },
     });
     if (existing) {
-      throw createError('Bu seviyede aynı başlıkta bir ödev zaten mevcut. Başlığı değiştirin veya mevcut ödevi kullanın.', 409);
+      throw createError('Bu seviye ve haftada aynı başlıkta bir ödeviniz zaten var. Başlığı değiştirin veya farklı hafta seçin.', 409);
     }
 
     const assignment = await prisma.assignment.create({
