@@ -12,11 +12,14 @@ import { SubmissionForm } from '@/components/student/SubmissionForm';
 export const AssignmentDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
-  
   const isStudent = user?.role === 'STUDENT';
-  const { data: assignment, isLoading, error } = isStudent 
-    ? useStudentAssignment(id!)
-    : useTeacherAssignment(id!);
+
+  const studentResult = useStudentAssignment(id ?? '');
+  const teacherResult = useTeacherAssignment(id ?? '');
+
+  const assignment = isStudent ? studentResult.data : teacherResult.data;
+  const isLoading = isStudent ? studentResult.isLoading : teacherResult.isLoading;
+  const error = isStudent ? studentResult.error : teacherResult.error;
 
   if (isLoading) {
     return (

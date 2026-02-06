@@ -11,15 +11,18 @@ import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { NotFound } from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 
-function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole?: string }) {
+function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole?: string | string[] }) {
   const { isAuthenticated, user } = useAuthStore();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRole && user?.role !== allowedRole) {
-    return <Navigate to="/dashboard" replace />;
+  if (allowedRole && user?.role) {
+    const allowed = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+    if (!allowed.includes(user.role)) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -36,7 +39,11 @@ function App() {
         } />
         
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        
+        <Route path="/assignments" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/submissions" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/evaluations" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/settings" element={<Navigate to="/dashboard" replace />} />
+
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Layout />
@@ -47,20 +54,20 @@ function App() {
           } />
         </Route>
 
+        <Route path="/assignments/create" element={
+          <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<CreateAssignment />} />
+        </Route>
+
         <Route path="/assignments/:id" element={
           <ProtectedRoute>
             <Layout />
           </ProtectedRoute>
         }>
           <Route index element={<AssignmentDetails />} />
-        </Route>
-
-        <Route path="/assignments/create" element={
-          <ProtectedRoute allowedRole="TEACHER">
-            <Layout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<CreateAssignment />} />
         </Route>
 
         <Route path="/students" element={
@@ -72,7 +79,7 @@ function App() {
         </Route>
 
         <Route path="/analytics" element={
-          <ProtectedRoute allowedRole="ADMIN">
+          <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
             <Layout />
           </ProtectedRoute>
         }>

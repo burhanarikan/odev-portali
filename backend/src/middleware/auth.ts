@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, JWTPayload } from '../utils/jwt';
 
+/* eslint-disable @typescript-eslint/no-namespace -- Express Request augmentation */
 declare global {
   namespace Express {
     interface Request {

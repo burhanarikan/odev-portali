@@ -35,6 +35,12 @@ Sistem aşağıdaki ana modelleri içerir:
 - **Evaluations** (Değerlendirmeler)
 - **Groups** (Gruplar)
 
+## 📌 Hızlı başlangıç
+
+- **Çalıştırma adımları:** [CALISTIRMA.md](CALISTIRMA.md)
+- **Elle nasıl denersiniz:** [NASIL_DENENIR.md](NASIL_DENENIR.md)
+- **Otomatik testler:** [TEST.md](TEST.md) — `npm run test` (kökte)
+
 ## 🚀 Kurulum
 
 ### Ön Gereksinimler
@@ -66,7 +72,7 @@ JWT_SECRET="your-super-secret-jwt-key-here"
 JWT_EXPIRES_IN="7d"
 UPLOAD_MAX_SIZE="10485760"
 NODE_ENV="development"
-PORT="5000"
+PORT="5050"
 ```
 
 #### Veritabanı Kurulumu
@@ -90,7 +96,7 @@ cp .env.example .env
 
 `.env` dosyasını düzenleyin:
 ```env
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=http://localhost:5050/api
 ```
 
 ## 🏃‍♂️ Çalıştırma
@@ -100,7 +106,7 @@ VITE_API_URL=http://localhost:5000
 cd backend
 npm run dev
 ```
-Backend http://localhost:5000 adresinde çalışacaktır.
+Backend http://localhost:5050 adresinde çalışacaktır (`.env` içinde `PORT=5050` kullanın).
 
 ### Frontend
 ```bash
@@ -252,7 +258,15 @@ npm run lint:fix     # ESLint fix
 npm run dev          # Geliştirme modu
 npm run build        # Build
 npm run preview      # Preview
+npm run test         # Vitest testleri
+npm run test:watch   # Testleri izleme modu
 npm run lint         # ESLint
+```
+
+#### Kök (tüm proje)
+```bash
+npm run dev          # Backend + frontend birlikte
+npm run test         # Backend + frontend testleri
 ```
 
 ## 🛡️ Güvenlik

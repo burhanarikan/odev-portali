@@ -1,13 +1,13 @@
 import { prisma } from '../config/database';
 import { AssignmentInput } from '../utils/validators';
-import { SimilarityService, SimilarAssignment } from './similarity.service';
+import { SimilarityService } from './similarity.service';
 import { createError } from '../middleware/errorHandler';
+import { TargetType } from '@prisma/client';
 
 export class AssignmentService {
   private similarityService = new SimilarityService();
 
   async createAssignment(data: AssignmentInput, teacherId: string) {
-    // Teacher record'unu bul
     const teacher = await prisma.teacher.findUnique({
       where: { userId: teacherId },
     });
@@ -16,7 +16,18 @@ export class AssignmentService {
       throw createError('Teacher not found', 404);
     }
 
-    // Ödevi oluştur (similarity check'i tamamen kaldır)
+    // Aynı öğretmen, aynı seviye ve aynı başlıkta ödev var mı? (tekrar ödev engelleme)
+    const existing = await prisma.assignment.findFirst({
+      where: {
+        createdBy: teacher.id,
+        levelId: data.levelId,
+        title: data.title.trim(),
+      },
+    });
+    if (existing) {
+      throw createError('Bu seviyede aynı başlıkta bir ödev zaten mevcut. Başlığı değiştirin veya mevcut ödevi kullanın.', 409);
+    }
+
     const assignment = await prisma.assignment.create({
       data: {
         title: data.title,
@@ -25,7 +36,7 @@ export class AssignmentService {
         weekNumber: data.weekNumber,
         startDate: new Date(data.startDate),
         dueDate: new Date(data.dueDate),
-        createdBy: teacher.id, // Teacher ID'yi kullan
+        createdBy: teacher.id,
         attachments: JSON.stringify(data.attachments || []),
         isDraft: data.isDraft || false,
       },
@@ -39,15 +50,45 @@ export class AssignmentService {
       },
     });
 
+    // Hedef: sadece belirli sınıf veya belirli öğrenciler
+    if (data.classId) {
+      await prisma.assignmentTarget.create({
+        data: {
+          assignmentId: assignment.id,
+          targetType: TargetType.CLASS,
+          classId: data.classId,
+        },
+      });
+    } else if (data.studentIds && data.studentIds.length > 0) {
+      for (const studentId of data.studentIds) {
+        await prisma.assignmentTarget.create({
+          data: {
+            assignmentId: assignment.id,
+            targetType: TargetType.STUDENT,
+            studentId,
+          },
+        });
+      }
+    }
+    // targets yoksa = tüm seviye (mevcut davranış)
+
     return {
       assignment,
-      similarAssignments: [], // Boş dizi
+      similarAssignments: [],
     };
   }
 
-  async getAssignments(teacherId?: string) {
+  private async resolveTeacherId(userId: string): Promise<string> {
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId },
+    });
+    if (!teacher) throw createError('Teacher not found', 404);
+    return teacher.id;
+  }
+
+  async getAssignments(teacherUserId?: string) {
+    const teacherId = teacherUserId ? await this.resolveTeacherId(teacherUserId) : undefined;
     const where = teacherId ? { createdBy: teacherId } : {};
-    
     return prisma.assignment.findMany({
       where,
       include: {
@@ -145,7 +186,8 @@ export class AssignmentService {
     return assignment;
   }
 
-  async updateAssignment(id: string, data: Partial<AssignmentInput>, teacherId: string) {
+  async updateAssignment(id: string, data: Partial<AssignmentInput>, teacherUserId: string) {
+    const teacherId = await this.resolveTeacherId(teacherUserId);
     const assignment = await prisma.assignment.findUnique({
       where: { id },
     });
@@ -177,7 +219,8 @@ export class AssignmentService {
     });
   }
 
-  async deleteAssignment(id: string, teacherId: string) {
+  async deleteAssignment(id: string, teacherUserId: string) {
+    const teacherId = await this.resolveTeacherId(teacherUserId);
     const assignment = await prisma.assignment.findUnique({
       where: { id },
     });
@@ -195,9 +238,35 @@ export class AssignmentService {
     });
   }
 
-  async getAssignmentsByWeek(weekNumber: number, teacherId?: string) {
+  async getAssignmentsByWeek(weekNumber: number, teacherUserId?: string) {
+    const teacherId = teacherUserId ? await this.resolveTeacherId(teacherUserId) : undefined;
     const where = {
       weekNumber,
+      ...(teacherId && { createdBy: teacherId }),
+    };
+
+    return prisma.assignment.findMany({
+      where,
+      include: {
+        level: true,
+        teacher: {
+          include: {
+            user: true,
+          },
+        },
+        _count: {
+          select: {
+            submissions: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getAssignmentsByLevel(levelId: string, teacherUserId?: string) {
+    const teacherId = teacherUserId ? await this.resolveTeacherId(teacherUserId) : undefined;
+    const where = {
+      levelId,
       ...(teacherId && { createdBy: teacherId }),
     };
 

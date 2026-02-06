@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { studentApi, teacherApi } from '../api';
-import { Assignment, StudentAssignments, SimilarAssignment } from '../types';
+import type { Assignment } from '../types';
 
 export const useStudentAssignments = () => {
   return useQuery({
@@ -27,6 +27,22 @@ export const useSubmitAssignment = () => {
       queryClient.invalidateQueries({ queryKey: ['student', 'assignments'] });
       queryClient.invalidateQueries({ queryKey: ['student', 'evaluations'] });
     },
+  });
+};
+
+export const useLevels = () => {
+  return useQuery({
+    queryKey: ['teacher', 'levels'],
+    queryFn: teacherApi.getLevels,
+    enabled: !!localStorage.getItem('token'),
+  });
+};
+
+export const useTeacherStudents = () => {
+  return useQuery({
+    queryKey: ['teacher', 'students'],
+    queryFn: teacherApi.getStudents,
+    enabled: !!localStorage.getItem('token'),
   });
 };
 
@@ -61,7 +77,7 @@ export const useUpdateAssignment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<Assignment> }) =>
       teacherApi.updateAssignment(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['teacher', 'assignments'] });

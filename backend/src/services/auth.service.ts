@@ -25,13 +25,13 @@ export class AuthService {
       }
     });
 
-    if (data.role === 'STUDENT' && data.classId) {
-      await prisma.student.create({
-        data: {
-          userId: user.id,
-          classId: data.classId,
-        }
-      });
+    if (data.role === 'STUDENT') {
+      const classId = data.classId ?? (await prisma.class.findFirst())?.id;
+      if (classId) {
+        await prisma.student.create({
+          data: { userId: user.id, classId },
+        });
+      }
     } else if (data.role === 'TEACHER') {
       await prisma.teacher.create({
         data: {

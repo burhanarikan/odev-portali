@@ -43,13 +43,13 @@ export class AnalyticsService {
     const levels = await prisma.level.findMany({
       where: {
         id: {
-          in: assignmentsByLevelData.map(item => item.levelId)
+          in: assignmentsByLevelData.map((item: { levelId: string }) => item.levelId)
         }
       }
     });
 
-    const assignmentsByLevel = assignmentsByLevelData.map(item => {
-      const level = levels.find(l => l.id === item.levelId);
+    const assignmentsByLevel = assignmentsByLevelData.map((item: { levelId: string; _count: number }) => {
+      const level = levels.find((l: { id: string; name?: string }) => l.id === item.levelId);
       return {
         levelName: level?.name || 'Bilinmeyen',
         count: item._count,
@@ -64,7 +64,7 @@ export class AnalyticsService {
     const assignments = await prisma.assignment.findMany({
       where: {
         id: {
-          in: submissionsByWeekData.map(item => item.assignmentId)
+          in: submissionsByWeekData.map((item: { assignmentId: string }) => item.assignmentId)
         }
       },
       select: {
@@ -73,8 +73,8 @@ export class AnalyticsService {
       }
     });
 
-    const submissionsByWeek = submissionsByWeekData.map(item => {
-      const assignment = assignments.find(a => a.id === item.assignmentId);
+    const submissionsByWeek = submissionsByWeekData.map((item: { assignmentId: string; _count: number }) => {
+      const assignment = assignments.find((a: { id: string; weekNumber: number | null }) => a.id === item.assignmentId);
       return {
         weekNumber: assignment?.weekNumber || 0,
         count: item._count,
@@ -122,16 +122,16 @@ export class AnalyticsService {
     });
 
     const activity = [
-      ...recentAssignments.map(assignment => ({
+      ...recentAssignments.map((assignment: { title: string; teacher: { user: { name: string } }; createdAt: Date }) => ({
         type: 'assignment_created' as const,
         title: assignment.title,
         user: assignment.teacher.user.name,
         timestamp: assignment.createdAt,
       })),
-      ...recentSubmissions.map(submission => ({
+      ...recentSubmissions.map((submission) => ({
         type: 'submission' as const,
-        title: `Teslim: ${submission.student?.user.name || 'Bilinmeyen'}`,
-        user: submission.student?.user.name || 'Bilinmeyen',
+        title: `Teslim: ${submission.student?.user.name ?? 'Bilinmeyen'}`,
+        user: submission.student?.user.name ?? 'Bilinmeyen',
         timestamp: submission.submittedAt,
       })),
     ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10);
@@ -173,15 +173,15 @@ export class AnalyticsService {
     });
 
     const submittedAssignments = student.submissions.length;
-    const evaluatedAssignments = student.submissions.filter(s => s.evaluation);
+    const evaluatedAssignments = student.submissions.filter((s: { evaluation: unknown } | null) => s?.evaluation);
 
     return {
       student,
       totalAssignments,
       submittedAssignments,
       evaluatedAssignments,
-      averageScore: evaluatedAssignments.length > 0 
-        ? Number(evaluatedAssignments.reduce((sum: number, s: any) => sum + Number(s.evaluation?.score || 0), 0) / evaluatedAssignments.length) 
+      averageScore: evaluatedAssignments.length > 0
+        ? evaluatedAssignments.reduce((sum: number, s) => sum + Number(Number((s as { evaluation?: { score?: unknown } | null })?.evaluation?.score ?? 0)), 0) / evaluatedAssignments.length
         : 0,
       completionRate: totalAssignments > 0 ? (submittedAssignments / totalAssignments) * 100 : 0,
     };
@@ -205,18 +205,22 @@ export class AnalyticsService {
       },
     });
 
-    const totalSubmissions = assignments.reduce((sum, a) => sum + a.submissions.length, 0);
-    const evaluatedSubmissions = assignments.reduce((sum, a) => 
-      sum + a.submissions.filter(s => s.evaluation).length, 0
+    const totalSubmissions = assignments.reduce((sum: number, a: { submissions: unknown[] }) => sum + a.submissions.length, 0);
+    const evaluatedSubmissions = assignments.reduce((sum: number, a: { submissions: Array<{ evaluation: unknown } | null> }) =>
+      sum + a.submissions.filter((s: { evaluation: unknown } | null) => s?.evaluation).length, 0
     );
+
+    const totalScore = assignments.reduce((sum: number, a) => {
+      const subs = a.submissions.filter((s) => s?.evaluation);
+      const score = subs.reduce((acc: number, sub) => acc + Number(Number((sub as { evaluation?: { score?: unknown } }).evaluation?.score ?? 0)), 0);
+      return sum + score;
+    }, 0);
 
     return {
       assignments,
       totalSubmissions,
       evaluatedSubmissions,
-      averageScore: evaluatedSubmissions > 0 
-        ? Number(evaluatedSubmissions.reduce((sum: number, s: any) => sum + Number(s.evaluation?.score || 0), 0) / evaluatedSubmissions.length)
-        : 0,
+      averageScore: evaluatedSubmissions > 0 ? totalScore / evaluatedSubmissions : 0,
     };
   }
 }

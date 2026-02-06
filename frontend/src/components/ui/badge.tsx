@@ -33,4 +33,5 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   )
 }
 
+/* eslint-disable react-refresh/only-export-components -- badgeVariants is a style helper */
 export { Badge, badgeVariants }

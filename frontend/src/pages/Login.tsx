@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLogin, useRegister } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -28,8 +29,21 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const { toast } = useToast();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
+
+  const showError = (error: unknown) => {
+    const msg =
+      error && typeof error === 'object' && 'response' in error
+        ? (error as { response?: { data?: { error?: string }; status?: number } }).response?.data?.error
+        : null;
+    toast({
+      title: isLogin ? 'Giriş başarısız' : 'Kayıt başarısız',
+      description: msg || (error instanceof Error ? error.message : 'Bir hata oluştu. Lütfen tekrar deneyin.'),
+      variant: 'destructive',
+    });
+  };
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -40,11 +54,15 @@ export const Login = () => {
   });
 
   const onLoginSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data);
+    loginMutation.mutate(data, {
+      onError: showError,
+    });
   };
 
   const onRegisterSubmit = (data: RegisterFormData) => {
-    registerMutation.mutate(data);
+    registerMutation.mutate(data, {
+      onError: showError,
+    });
   };
 
   return (

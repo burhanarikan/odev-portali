@@ -20,11 +20,16 @@ export class StudentService {
     }
 
     const now = new Date();
-    
+    // Ödevler: aynı seviye ve (hedef yok = tüm seviye VEYA hedefte bu sınıf/öğrenci var)
     const assignments = await prisma.assignment.findMany({
       where: {
         levelId: student.class.levelId,
         isDraft: false,
+        OR: [
+          { targets: { none: {} } },
+          { targets: { some: { classId: student.classId } } },
+          { targets: { some: { studentId: student.id } } },
+        ],
       },
       include: {
         level: true,
@@ -47,16 +52,17 @@ export class StudentService {
       },
     });
 
-    const active = assignments.filter(a => 
-      a.startDate <= now && a.dueDate >= now && 
+    type AssignmentWithSubmissions = { startDate: Date; dueDate: Date; submissions: unknown[] };
+    const active = assignments.filter((a: AssignmentWithSubmissions) =>
+      a.startDate <= now && a.dueDate >= now &&
       a.submissions.length === 0
     );
 
-    const upcoming = assignments.filter(a => 
+    const upcoming = assignments.filter((a: AssignmentWithSubmissions) =>
       a.startDate > now && a.submissions.length === 0
     );
 
-    const past = assignments.filter(a => 
+    const past = assignments.filter((a: AssignmentWithSubmissions) =>
       a.dueDate < now || a.submissions.length > 0
     );
 
@@ -88,6 +94,11 @@ export class StudentService {
         id,
         levelId: student.class.levelId,
         isDraft: false,
+        OR: [
+          { targets: { none: {} } },
+          { targets: { some: { classId: student.classId } } },
+          { targets: { some: { studentId: student.id } } },
+        ],
       },
       include: {
         level: true,
@@ -216,9 +227,7 @@ export class StudentService {
     return prisma.submission.findMany({
       where: {
         studentId: student.id,
-        evaluation: {
-          isNotNull: true,
-        },
+        evaluation: { isNot: null },
       },
       include: {
         assignment: {

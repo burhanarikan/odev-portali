@@ -1,7 +1,33 @@
 import api from './client';
 import { Assignment, SimilarAssignment } from '../types';
 
+export interface Level {
+  id: string;
+  name: string;
+  sortOrder: number;
+}
+
+export interface TeacherStudent {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  class: { id: string; name: string; level: { id: string; name: string } } | null;
+  enrollmentDate: string;
+  createdAt: string;
+}
+
 export const teacherApi = {
+  getLevels: async () => {
+    const response = await api.get<Level[]>('/teacher/levels');
+    return response.data;
+  },
+
+  getStudents: async () => {
+    const response = await api.get<TeacherStudent[]>('/teacher/students');
+    return response.data;
+  },
+
   createAssignment: async (data: {
     title: string;
     description?: string;
@@ -11,6 +37,8 @@ export const teacherApi = {
     dueDate: string;
     isDraft?: boolean;
     attachments?: string[];
+    classId?: string;
+    studentIds?: string[];
   }) => {
     const response = await api.post<{
       assignment: Assignment;

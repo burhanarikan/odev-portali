@@ -31,7 +31,7 @@ export const TeacherDashboard = () => {
   const publishedAssignments = totalAssignments - draftAssignments;
   const totalSubmissions = assignments?.reduce((sum, a) => sum + (a._count?.submissions || 0), 0) || 0;
 
-  const getStatusBadge = (assignment: any) => {
+  const getStatusBadge = (assignment: import('@/types').Assignment) => {
     if (assignment.isDraft) {
       return <Badge variant="outline">Taslak</Badge>;
     }

@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { studentApi } from '../api';
-import { Submission, Evaluation } from '../types';
 
 export const useStudentSubmission = (assignmentId: string) => {
   return useQuery({

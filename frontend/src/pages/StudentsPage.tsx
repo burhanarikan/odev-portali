@@ -1,57 +1,48 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Search, Eye, Mail } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
-
-// Mock data - gerçek API'den gelecek
-const mockStudents = [
-  {
-    id: '1',
-    name: 'Ahmet Yılmaz',
-    email: 'ahmet@test.com',
-    class: { name: 'A', level: { name: 'A1' } },
-    enrollmentDate: '2024-01-15',
-    submissionCount: 5,
-    averageScore: 85,
-  },
-  {
-    id: '2',
-    name: 'Ayşe Demir',
-    email: 'ayse@test.com',
-    class: { name: 'B', level: { name: 'A1' } },
-    enrollmentDate: '2024-01-20',
-    submissionCount: 4,
-    averageScore: 92,
-  },
-  {
-    id: '3',
-    name: 'Mehmet Kaya',
-    email: 'mehmet@test.com',
-    class: { name: 'A', level: { name: 'A2' } },
-    enrollmentDate: '2024-02-01',
-    submissionCount: 3,
-    averageScore: 78,
-  },
-];
+import { Users, Search, Eye, Mail, Loader2 } from 'lucide-react';
+import { useTeacherStudents } from '@/hooks/useAssignments';
 
 export const StudentsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
 
-  const filteredStudents = mockStudents.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = selectedLevel === 'all' || student.class.level.name === selectedLevel;
-    const matchesClass = selectedClass === 'all' || student.class.name === selectedClass;
-    
-    return matchesSearch && matchesLevel && matchesClass;
-  });
+  const { data: students = [], isLoading, error } = useTeacherStudents();
+
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
+      const matchesSearch =
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const levelName = student.class?.level?.name ?? '';
+      const className = student.class?.name ?? '';
+      const matchesLevel = selectedLevel === 'all' || levelName === selectedLevel;
+      const matchesClass = selectedClass === 'all' || className === selectedClass;
+      return matchesSearch && matchesLevel && matchesClass;
+    });
+  }, [students, searchTerm, selectedLevel, selectedClass]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-red-600">
+        Öğrenci listesi yüklenirken bir hata oluştu.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -144,9 +135,13 @@ export const StudentsPage = () => {
                             <span>{student.email}</span>
                           </div>
                           <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant="secondary">
-                              {student.class.level.name} - {student.class.name}
-                            </Badge>
+                            {student.class ? (
+                              <Badge variant="secondary">
+                                {student.class.level.name} - {student.class.name} Sınıfı
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Sınıf atanmadı</Badge>
+                            )}
                             <span className="text-xs text-gray-500">
                               Katılım: {new Date(student.enrollmentDate).toLocaleDateString('tr-TR')}
                             </span>
@@ -155,10 +150,6 @@ export const StudentsPage = () => {
                       </div>
                       
                       <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <div className="text-sm font-medium">{student.submissionCount} Teslim</div>
-                          <div className="text-xs text-gray-500">Ortalama: {student.averageScore}</div>
-                        </div>
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4 mr-2" />
                           Detay

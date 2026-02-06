@@ -26,7 +26,7 @@ export const StudentDashboard = () => {
     );
   }
 
-  const getStatusBadge = (assignment: any) => {
+  const getStatusBadge = (assignment: import('@/types').Assignment) => {
     const hasSubmission = assignment.submissions && assignment.submissions.length > 0;
     
     if (hasSubmission) {
@@ -92,53 +92,123 @@ export const StudentDashboard = () => {
         </Card>
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Aktif Ödevler</h2>
-        {assignments?.active?.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Aktif ödev bulunmuyor</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {assignments?.active?.map((assignment) => (
-              <Card key={assignment.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{assignment.title}</CardTitle>
-                    {getStatusBadge(assignment)}
-                  </div>
-                  <CardDescription>
-                    {assignment.level?.name} - {assignment.weekNumber}. Hafta
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Son teslim: {formatDate(assignment.dueDate)}
+      <div className="space-y-6">
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Aktif Ödevler</h2>
+          {assignments?.active?.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Aktif ödev bulunmuyor</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {assignments?.active?.map((assignment) => (
+                <Card key={assignment.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg">{assignment.title}</CardTitle>
+                      {getStatusBadge(assignment)}
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Clock className="h-4 w-4 mr-2" />
-                      Başlangıç: {formatDate(assignment.startDate)}
+                    <CardDescription>
+                      {assignment.level?.name} - {assignment.weekNumber}. Hafta
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Son teslim: {formatDate(assignment.dueDate)}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock className="h-4 w-4 mr-2" />
+                        Başlangıç: {formatDate(assignment.startDate)}
+                      </div>
+                      {assignment.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {assignment.description}
+                        </p>
+                      )}
                     </div>
-                    {assignment.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {assignment.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="mt-4">
-                    <Link to={`/assignments/${assignment.id}`}>
-                      <Button className="w-full">Ödevi Görüntüle</Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="mt-4">
+                      <Link to={`/assignments/${assignment.id}`}>
+                        <Button className="w-full">Ödevi Görüntüle</Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {(assignments?.upcoming?.length ?? 0) > 0 && (
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Gelecek Ödevler</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {assignments?.upcoming?.map((assignment) => (
+                <Card key={assignment.id} className="hover:shadow-md transition-shadow opacity-90">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg">{assignment.title}</CardTitle>
+                      {getStatusBadge(assignment)}
+                    </div>
+                    <CardDescription>
+                      {assignment.level?.name} - {assignment.weekNumber}. Hafta
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Son teslim: {formatDate(assignment.dueDate)}
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <Link to={`/assignments/${assignment.id}`}>
+                        <Button variant="outline" className="w-full">Önizle</Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {(assignments?.past?.length ?? 0) > 0 && (
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Geçmiş / Tamamlanan</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {assignments?.past?.map((assignment) => (
+                <Card key={assignment.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg">{assignment.title}</CardTitle>
+                      {getStatusBadge(assignment)}
+                    </div>
+                    <CardDescription>
+                      {assignment.level?.name} - {assignment.weekNumber}. Hafta
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2" />
+                        Bitiş: {formatDate(assignment.dueDate)}
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <Link to={`/assignments/${assignment.id}`}>
+                        <Button variant="outline" className="w-full">Detay</Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
         )}
       </div>
     </div>

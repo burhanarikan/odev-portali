@@ -8,6 +8,8 @@ import {
   checkSimilarity,
   getAssignmentsByWeek,
   getAssignmentsByLevel,
+  getLevels,
+  getStudents,
   createGroup,
   addStudentToGroup,
   removeStudentFromGroup,
@@ -20,6 +22,8 @@ const router = Router();
 router.use(authenticate);
 router.use(authorize(['TEACHER', 'ADMIN']));
 
+router.get('/levels', getLevels);
+router.get('/students', getStudents);
 router.post('/assignments', createAssignment);
 router.get('/assignments', getAssignments);
 router.get('/assignments/:id', getAssignmentById);

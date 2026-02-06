@@ -53,4 +53,5 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 )
 Button.displayName = "Button"
 
+/* eslint-disable react-refresh/only-export-components -- buttonVariants is a style helper */
 export { Button, buttonVariants }

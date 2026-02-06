@@ -10,7 +10,6 @@ import {
   Activity,
   BarChart3,
   Calendar,
-  UserCheck
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
@@ -114,7 +113,7 @@ export const AnalyticsPage = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.assignmentsByLevel.map((level) => (
+              {stats.assignmentsByLevel.map((level: { levelName: string; count: number }) => (
                 <div key={level.levelName} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline">{level.levelName}</Badge>
@@ -148,9 +147,9 @@ export const AnalyticsPage = () => {
           <CardContent>
             <div className="space-y-4">
               {stats.submissionsByWeek
-                .sort((a, b) => a.weekNumber - b.weekNumber)
+                .sort((a: { weekNumber: number }, b: { weekNumber: number }) => a.weekNumber - b.weekNumber)
                 .slice(0, 8)
-                .map((week) => (
+                .map((week: { weekNumber: number; count: number }) => (
                   <div key={week.weekNumber} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Badge variant="outline">{week.weekNumber}. Hafta</Badge>
@@ -160,7 +159,7 @@ export const AnalyticsPage = () => {
                       <div 
                         className="bg-green-600 h-2 rounded-full" 
                         style={{ 
-                          width: `${Math.max((week.count / Math.max(...stats.submissionsByWeek.map(w => w.count))) * 100, 5)}%` 
+                          width: `${Math.max((week.count / Math.max(...stats.submissionsByWeek.map((w: { count: number }) => w.count))) * 100, 5)}%` 
                         }}
                       />
                     </div>
@@ -184,7 +183,7 @@ export const AnalyticsPage = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {stats.recentActivity.map((activity, index) => (
+            {stats.recentActivity.map((activity: { type: string; title: string; user: string; timestamp: string }, index: number) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                 <div className="flex items-center space-x-3">
                   <div className={`w-2 h-2 rounded-full ${

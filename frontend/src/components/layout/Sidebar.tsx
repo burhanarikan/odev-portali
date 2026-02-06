@@ -1,15 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/store/authStore';
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  FileText, 
-  CheckSquare,
-  Users,
-  Settings,
-  BarChart3
-} from 'lucide-react';
+import { LayoutDashboard, FileText, Users, BarChart3 } from 'lucide-react';
 
 const navigation = [
   {
@@ -19,28 +11,10 @@ const navigation = [
     roles: ['STUDENT', 'TEACHER', 'ADMIN'],
   },
   {
-    name: 'Ödevler',
-    href: '/assignments',
-    icon: BookOpen,
-    roles: ['STUDENT', 'TEACHER', 'ADMIN'],
-  },
-  {
     name: 'Ödev Oluştur',
     href: '/assignments/create',
     icon: FileText,
     roles: ['TEACHER', 'ADMIN'],
-  },
-  {
-    name: 'Teslimler',
-    href: '/submissions',
-    icon: FileText,
-    roles: ['STUDENT', 'TEACHER', 'ADMIN'],
-  },
-  {
-    name: 'Değerlendirmeler',
-    href: '/evaluations',
-    icon: CheckSquare,
-    roles: ['STUDENT'],
   },
   {
     name: 'Öğrenciler',
@@ -52,13 +26,7 @@ const navigation = [
     name: 'Analitik',
     href: '/analytics',
     icon: BarChart3,
-    roles: ['ADMIN'],
-  },
-  {
-    name: 'Ayarlar',
-    href: '/settings',
-    icon: Settings,
-    roles: ['ADMIN'],
+    roles: ['TEACHER', 'ADMIN'],
   },
 ];
 

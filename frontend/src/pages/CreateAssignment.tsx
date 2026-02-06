@@ -8,9 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCreateAssignment, useCheckSimilarity } from '@/hooks/useAssignments';
+import { useCreateAssignment, useCheckSimilarity, useLevels, useTeacherStudents } from '@/hooks/useAssignments';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -31,8 +31,14 @@ export const CreateAssignment = () => {
   const { toast } = useToast();
   const createMutation = useCreateAssignment();
   const similarityMutation = useCheckSimilarity();
+  const { data: levels = [], isLoading: levelsLoading } = useLevels();
+  const { data: studentsList = [] } = useTeacherStudents();
   const [showSimilarityWarning, setShowSimilarityWarning] = useState(false);
-  const [similarAssignments, setSimilarAssignments] = useState<any[]>([]);
+  const [similarAssignments, setSimilarAssignments] = useState<import('@/types').SimilarAssignment[]>([]);
+  type TargetType = 'level' | 'class' | 'students';
+  const [targetType, setTargetType] = useState<TargetType>('level');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   const form = useForm<AssignmentFormData>({
     resolver: zodResolver(assignmentSchema),
@@ -42,19 +48,14 @@ export const CreateAssignment = () => {
     },
   });
 
-  const checkSimilarity = async (data: AssignmentFormData) => {
-    try {
-      const result = await similarityMutation.mutateAsync(data);
-      if (result.similarAssignments.length > 0) {
-        setSimilarAssignments(result.similarAssignments);
-        setShowSimilarityWarning(true);
-        return false;
-      }
-      return true;
-    } catch (error) {
-      return true;
-    }
-  };
+  const levelId = form.watch('levelId');
+  const studentsInLevel = levelId
+    ? studentsList.filter((s) => s.class?.level?.id === levelId)
+    : [];
+  const classesInLevel = studentsInLevel.reduce<{ id: string; name: string }[]>((acc, s) => {
+    if (s.class && !acc.some((c) => c.id === s.class!.id)) acc.push({ id: s.class.id, name: s.class.name });
+    return acc;
+  }, []);
 
   const onSubmit = async (data: AssignmentFormData) => {
     console.log('Form submit edildi:', data);
@@ -63,31 +64,33 @@ export const CreateAssignment = () => {
   };
 
   const createAssignment = (data: AssignmentFormData) => {
-    console.log('Ödev oluşturma verisi:', data);
-    
-    // Backend'e gönderirken tarih formatını düzelt
-    const backendData = {
+    const now = new Date();
+    const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const startDate = data.startDate ? new Date(data.startDate) : now;
+    const dueDate = data.dueDate ? new Date(data.dueDate) : weekLater;
+    const backendData: Record<string, unknown> = {
       ...data,
-      startDate: data.startDate || new Date().toISOString(),
-      dueDate: data.dueDate || new Date().toISOString(),
+      startDate: startDate.toISOString(),
+      dueDate: dueDate.toISOString(),
     };
-    
-    console.log('Backend verisi:', backendData);
-    
-    createMutation.mutate(backendData, {
+    if (targetType === 'class' && selectedClassId) backendData.classId = selectedClassId;
+    if (targetType === 'students' && selectedStudentIds.length > 0) backendData.studentIds = selectedStudentIds;
+    createMutation.mutate(backendData as Parameters<typeof createMutation.mutate>[0], {
       onSuccess: () => {
-        console.log('Ödev oluşturma başarılı');
         toast({
           title: "Başarılı",
           description: "Ödev başarıyla oluşturuldu.",
         });
         navigate('/dashboard');
       },
-      onError: (error) => {
-        console.error('Ödev oluşturma hatası:', error);
+      onError: (error: { response?: { data?: { error?: string } }; message?: string }) => {
+        const msg =
+          (error as { response?: { data?: { error?: string } } }).response?.data?.error ||
+          (error as { message?: string }).message ||
+          'Ödev oluşturulurken bir hata oluştu.';
         toast({
           title: "Hata",
-          description: "Ödev oluşturulurken bir hata oluştu.",
+          description: msg,
           variant: "destructive",
         });
       },
@@ -97,6 +100,7 @@ export const CreateAssignment = () => {
   const proceedAnyway = () => {
     const data = form.getValues();
     setShowSimilarityWarning(false);
+    setSimilarAssignments([]);
     createAssignment(data);
   };
 
@@ -174,15 +178,19 @@ export const CreateAssignment = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="levelId">Seviye</Label>
-                <Select onValueChange={(value) => form.setValue('levelId', value)}>
+                <Select
+                  onValueChange={(value) => form.setValue('levelId', value)}
+                  disabled={levelsLoading}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seviye seçin" />
+                    <SelectValue placeholder={levelsLoading ? 'Yükleniyor...' : 'Seviye seçin'} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="129097d5-dfad-45fe-886d-bdcffb3a30eb">A1</SelectItem>
-                    <SelectItem value="950085d8-c613-4a72-a35c-cb5ff075cb2d">A2</SelectItem>
-                    <SelectItem value="ee6518e7-54e9-42c3-a12e-db2623d796e1">B1</SelectItem>
-                    <SelectItem value="abc82634-7318-42c1-a54a-287fa5c1ec50">B2</SelectItem>
+                    {levels.map((level) => (
+                      <SelectItem key={level.id} value={level.id}>
+                        {level.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {form.formState.errors.levelId && (
@@ -219,6 +227,86 @@ export const CreateAssignment = () => {
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Kime atanacak */}
+            <div className="space-y-3 border-t pt-4">
+              <Label className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Kime atanacak
+              </Label>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="targetType"
+                    checked={targetType === 'level'}
+                    onChange={() => setTargetType('level')}
+                    className="rounded border-gray-300"
+                  />
+                  <span>Tüm seviye (seçilen seviyedeki herkes)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="targetType"
+                    checked={targetType === 'class'}
+                    onChange={() => setTargetType('class')}
+                    className="rounded border-gray-300"
+                    disabled={!levelId || classesInLevel.length === 0}
+                  />
+                  <span>Belirli sınıf</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="targetType"
+                    checked={targetType === 'students'}
+                    onChange={() => setTargetType('students')}
+                    className="rounded border-gray-300"
+                    disabled={!levelId || studentsInLevel.length === 0}
+                  />
+                  <span>Belirli öğrenciler</span>
+                </label>
+              </div>
+              {targetType === 'class' && levelId && (
+                <div className="mt-2 max-w-xs">
+                  <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sınıf seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classesInLevel.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {targetType === 'students' && levelId && (
+                <div className="mt-2 max-w-md space-y-1">
+                  <p className="text-sm text-gray-600">Ödevi görecek öğrencileri seçin</p>
+                  <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
+                    {studentsInLevel.map((s) => (
+                      <label key={s.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudentIds.includes(s.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedStudentIds((prev) => [...prev, s.id]);
+                            else setSelectedStudentIds((prev) => prev.filter((id) => id !== s.id));
+                          }}
+                          className="rounded border-gray-300"
+                        />
+                        <span className="text-sm">{s.name}</span>
+                        <span className="text-xs text-gray-500">({s.class?.name})</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -288,7 +376,7 @@ export const CreateAssignment = () => {
               <Button onClick={proceedAnyway} variant="default">
                 Yine de Devam Et
               </Button>
-              <Button onClick={() => setShowSimilarityWarning(false)} variant="outline">
+              <Button onClick={() => { setShowSimilarityWarning(false); setSimilarAssignments([]); }} variant="outline">
                 İptal Et
               </Button>
             </div>
