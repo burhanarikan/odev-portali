@@ -25,10 +25,16 @@ export const getTimelineByClass = async (req: Request, res: Response, next: Next
 };
 
 export const getTeacherClasses = async (req: Request, res: Response, next: NextFunction) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H3',location:'timeline.controller:getTeacherClasses:entry',message:'getTeacherClasses entered',data:{hasUser:!!req.user},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     const list = await timelineService.getClassesForTeacher(req.user.userId);
     res.json(list);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H3',location:'timeline.controller:getTeacherClasses:exit',message:'getTeacherClasses success',data:{count:Array.isArray(list)?list.length:0},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   } catch (e) {
     errorHandler(e as AppError, req, res, next);
   }

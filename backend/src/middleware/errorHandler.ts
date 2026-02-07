@@ -27,6 +27,12 @@ export const errorHandler = (
   console.error(`Error ${statusCode}: ${message}`);
   if (err.stack) console.error(err.stack);
 
+  // #region agent log
+  if (statusCode === 500) {
+    fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H5',location:'errorHandler.ts:500',message:'500 response',data:{statusCode,message:message.substring(0,200),errName:(err as Error).name},timestamp:Date.now()})}).catch(()=>{});
+  }
+  // #endregion
+
   if (process.env.NODE_ENV === 'development') {
     res.status(statusCode).json({
       error: message,

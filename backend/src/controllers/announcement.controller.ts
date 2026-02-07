@@ -5,9 +5,15 @@ import { errorHandler, AppError } from '../middleware/errorHandler';
 const announcementService = new AnnouncementService();
 
 export const listAnnouncements = async (req: Request, res: Response, next: NextFunction) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H4',location:'announcement.controller:listAnnouncements:entry',message:'listAnnouncements entered',data:{},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   try {
     const list = await announcementService.list();
     res.json(list);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H4',location:'announcement.controller:listAnnouncements:exit',message:'listAnnouncements success',data:{count:Array.isArray(list)?list.length:0},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   } catch (e) {
     errorHandler(e as AppError, req, res, next);
   }

@@ -24,12 +24,18 @@ export const createAssignment = async (req: Request, res: Response, next: NextFu
 };
 
 export const getAssignments = async (req: Request, res: Response, next: NextFunction) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H1',location:'teacher.controller:getAssignments:entry',message:'getAssignments entered',data:{hasUser:!!req.user,role:req.user?.role},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     // Yönetici tüm ödevleri görür (kim ne vermiş takibi)
     const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
     const assignments = await assignmentService.getAssignments(teacherUserId);
     res.json(assignments);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H1',location:'teacher.controller:getAssignments:exit',message:'getAssignments success',data:{count:Array.isArray(assignments)?assignments.length:0},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
   }
@@ -231,10 +237,16 @@ export const deleteHomework = async (req: Request, res: Response, next: NextFunc
 };
 
 export const getSubmissions = async (req: Request, res: Response, next: NextFunction) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H2',location:'teacher.controller:getSubmissions:entry',message:'getSubmissions entered',data:{hasUser:!!req.user},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     const submissions = await assignmentService.getSubmissionsForTeacher(req.user.userId);
     res.json(submissions);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H2',location:'teacher.controller:getSubmissions:exit',message:'getSubmissions success',data:{count:Array.isArray(submissions)?submissions.length:0},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
   }
