@@ -29,6 +29,7 @@ export class EvaluationService {
       score: data.score != null ? data.score : undefined,
       feedback: data.feedback ?? undefined,
       accepted: data.accepted ?? false,
+      annotationData: data.annotationData ?? undefined,
     };
 
     const evaluation = await prisma.evaluation.upsert({
@@ -39,11 +40,13 @@ export class EvaluationService {
         score: payload.score,
         feedback: payload.feedback,
         accepted: payload.accepted,
+        annotationData: payload.annotationData ?? undefined,
       },
       update: {
         ...(payload.score !== undefined && { score: payload.score }),
         ...(payload.feedback !== undefined && { feedback: payload.feedback }),
         accepted: payload.accepted,
+        ...(payload.annotationData !== undefined && { annotationData: payload.annotationData }),
       },
       include: {
         submission: {

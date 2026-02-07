@@ -45,7 +45,7 @@ export const teacherApi = {
 
   submitEvaluation: async (
     submissionId: string,
-    data: { score?: number; feedback?: string; accepted: boolean }
+    data: { score?: number; feedback?: string; accepted: boolean; annotationData?: unknown }
   ) => {
     const response = await api.post<unknown>(
       `/teacher/submissions/${submissionId}/evaluation`,

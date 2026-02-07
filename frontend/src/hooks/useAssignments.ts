@@ -124,7 +124,7 @@ export const useSubmitEvaluation = () => {
       data,
     }: {
       submissionId: string;
-      data: { score?: number; feedback?: string; accepted: boolean };
+      data: { score?: number; feedback?: string; accepted: boolean; annotationData?: unknown };
     }) => teacherApi.submitEvaluation(submissionId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher', 'assignments'] });

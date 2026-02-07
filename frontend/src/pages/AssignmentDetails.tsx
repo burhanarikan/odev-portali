@@ -21,6 +21,13 @@ import { Calendar, Clock, User, FileText, Download, AlertCircle, ArrowLeft, Chev
 import { Loader2 } from 'lucide-react';
 import { SubmissionForm } from '@/components/student/SubmissionForm';
 import { AudioPlayer } from '@/components/ui/audio-player';
+import { PdfAnnotator, type AnnotationData } from '@/components/pdf/PdfAnnotator';
+import {
+  Dialog as PdfDialog,
+  DialogContent as PdfDialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export const AssignmentDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -190,11 +197,19 @@ export const AssignmentDetails = () => {
                     <div key={index} className="flex items-center justify-between p-2 border rounded">
                       <div className="flex items-center space-x-2">
                         <FileText className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm">{attachment}</span>
+                        <span className="text-sm truncate">{typeof attachment === 'string' ? attachment : ''}</span>
                       </div>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      {typeof attachment === 'string' && attachment.startsWith('http') ? (
+                        <a href={attachment} target="_blank" rel="noopener noreferrer" download>
+                          <Button variant="outline" size="sm" type="button">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </a>
+                      ) : (
+                        <Button variant="outline" size="sm" type="button" disabled title="İndirme adresi yok">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -259,13 +274,24 @@ export const AssignmentDetails = () => {
                         >
                           <FileText className="h-4 w-4" /> Dosyayı aç
                         </a>
+                        {isPdfUrl((submission as { fileUrl: string }).fileUrl) &&
+                         (submission as { evaluation?: { annotationData?: unknown } }).evaluation?.annotationData && (
+                          <div className="mt-3">
+                            <h4 className="font-medium text-gray-900 mb-2">Hocanın işaretlemeleri</h4>
+                            <PdfAnnotator
+                              fileUrl={(submission as { fileUrl: string }).fileUrl}
+                              initialData={(submission as { evaluation?: { annotationData?: AnnotationData } }).evaluation?.annotationData ?? undefined}
+                              readOnly
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
 
                     {submission!.evaluation && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <h4 className="font-medium text-blue-800 mb-2">Değerlendirme</h4>
-                        {submission!.evaluation.score && (
+                        {submission!.evaluation.score != null && (
                           <p className="text-blue-700">
                             Puan: {submission!.evaluation.score}/100
                           </p>
@@ -338,6 +364,10 @@ export const AssignmentDetails = () => {
   );
 }
 
+function isPdfUrl(url: string): boolean {
+  return url.toLowerCase().includes('.pdf');
+}
+
 type SubmissionItem = {
   id: string;
   submittedAt: string;
@@ -345,7 +375,7 @@ type SubmissionItem = {
   contentText?: string | null;
   audioUrl?: string | null;
   fileUrl?: string | null;
-  evaluation?: { score?: number; feedback?: string; accepted: boolean } | null;
+  evaluation?: { score?: number; feedback?: string; accepted: boolean; annotationData?: unknown } | null;
   student?: { user?: { name: string } } | null;
 };
 
@@ -364,7 +394,7 @@ function SubmissionListCard({
   onToggleExpand: (id: string | null) => void;
   onSubmitEvaluation: (params: {
     submissionId: string;
-    data: { score?: number; feedback?: string; accepted: boolean };
+    data: { score?: number; feedback?: string; accepted: boolean; annotationData?: unknown };
   }) => Promise<unknown>;
   isSubmitting: boolean;
   onSuccess: () => void;
@@ -449,7 +479,7 @@ function SubmissionEvaluationForm({
   isSubmitting,
 }: {
   submission: SubmissionItem;
-  onSubmit: (data: { score?: number; feedback?: string; accepted: boolean }) => Promise<void>;
+  onSubmit: (data: { score?: number; feedback?: string; accepted: boolean; annotationData?: unknown }) => Promise<void>;
   isSubmitting: boolean;
 }) {
   const [score, setScore] = useState<string>(
@@ -457,6 +487,10 @@ function SubmissionEvaluationForm({
   );
   const [feedback, setFeedback] = useState<string>(submission.evaluation?.feedback ?? '');
   const [accepted, setAccepted] = useState<boolean>(submission.evaluation?.accepted ?? false);
+  const [annotationData, setAnnotationData] = useState<AnnotationData | undefined>(
+    submission.evaluation?.annotationData as AnnotationData | undefined
+  );
+  const [pdfAnnotatorOpen, setPdfAnnotatorOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -466,8 +500,12 @@ function SubmissionEvaluationForm({
       score: numScore,
       feedback: feedback.trim() || undefined,
       accepted,
+      annotationData: annotationData ?? undefined,
     });
   };
+
+  const submissionFileUrl = submission.fileUrl ?? '';
+  const isPdf = submissionFileUrl && isPdfUrl(submissionFileUrl);
 
   return (
     <div className="p-4 pt-0 border-t bg-gray-50/50 space-y-4">
@@ -490,15 +528,46 @@ function SubmissionEvaluationForm({
       {submission.fileUrl && (
         <div>
           <Label className="text-xs text-gray-500">Yüklenen dosya</Label>
-          <a
-            href={submission.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 text-sm text-blue-600 hover:underline flex items-center gap-1"
-          >
-            <FileText className="h-4 w-4" /> Dosyayı aç / indir
-          </a>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <a
+              href={submission.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+            >
+              <FileText className="h-4 w-4" /> Dosyayı aç / indir
+            </a>
+            {isPdf && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPdfAnnotatorOpen(true)}
+              >
+                PDF üzerinde işaretle (kırmızı kalem / yorum)
+              </Button>
+            )}
+          </div>
         </div>
+      )}
+      {isPdf && pdfAnnotatorOpen && (
+        <PdfDialog open={pdfAnnotatorOpen} onOpenChange={setPdfAnnotatorOpen}>
+          <PdfDialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>PDF üzerinde işaretleme</DialogTitle>
+            </DialogHeader>
+            <PdfAnnotator
+              fileUrl={submissionFileUrl}
+              initialData={annotationData ?? (submission.evaluation?.annotationData as AnnotationData | undefined) ?? undefined}
+              readOnly={false}
+              onSave={(data) => {
+                setAnnotationData(data);
+                setPdfAnnotatorOpen(false);
+              }}
+              onClose={() => setPdfAnnotatorOpen(false)}
+            />
+          </PdfDialogContent>
+        </PdfDialog>
       )}
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>

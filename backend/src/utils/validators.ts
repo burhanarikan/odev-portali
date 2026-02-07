@@ -72,6 +72,7 @@ export const evaluationSchema = z.object({
   score: z.number().min(0).max(100).optional(),
   feedback: z.string().optional(),
   accepted: z.boolean().default(false),
+  annotationData: z.record(z.unknown()).optional(),
 });
 
 export const peerReviewSchema = z.object({
