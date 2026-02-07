@@ -4,6 +4,15 @@ Render’da 500 alıyorsan ve logda **The column `...` does not exist** görüyo
 
 ---
 
+## 0. Veritabanı güncellenmediyse / Tekrar çalıştırma
+
+1. **Mutlaka `backend` klasöründen** çalıştırın: `cd backend`
+2. **DATABASE_URL** içinde `?` veya `&` varsa tırnak içinde verin.
+3. Kontrol için: `DATABASE_URL="..." npx prisma db execute --file prisma/verify-tables.sql` — çıktıda `MISSING` varsa script'i tekrar çalıştırın.
+4. **Alternatif:** Neon Dashboard → SQL Editor → `production-fix-all.sql` içeriğini yapıştırıp Run.
+
+---
+
 ## 1. Tek script ile tüm bilinen eksik sütunları ekle
 
 Kendi bilgisayarında (production `DATABASE_URL` ile):
