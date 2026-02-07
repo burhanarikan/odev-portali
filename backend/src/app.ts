@@ -33,9 +33,10 @@ const limiter = rateLimit({
 
 app.use(helmet());
 const localhostOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:5173'];
+const productionFrontend = ['https://odev-portali.vercel.app'];
 const corsOrigins = process.env.FRONTEND_URL
-  ? [...process.env.FRONTEND_URL.split(',').map((o) => o.trim()).filter(Boolean), ...localhostOrigins]
-  : localhostOrigins;
+  ? [...process.env.FRONTEND_URL.split(',').map((o) => o.trim()).filter(Boolean), ...productionFrontend, ...localhostOrigins]
+  : [...productionFrontend, ...localhostOrigins];
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);
@@ -47,6 +48,7 @@ app.use(cors({
     return cb(null, false);
   },
   credentials: true,
+  optionsSuccessStatus: 200,
 }));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));

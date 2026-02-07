@@ -52,7 +52,18 @@ DATABASE_URL="postgresql://user:pass@host.neon.tech/odev_portali?sslmode=require
 
 ---
 
-## 3. İsteğe bağlı: 429 alıyorsanız
+## 3. CORS: Frontend (Vercel) adresi
+
+Vercel’de frontend canlıysa (örn. `https://odev-portali.vercel.app`), tarayıcıdan API isteği yapıldığında CORS hatası almamak için Render’da şu değişkeni ekleyin:
+
+- **Key:** `FRONTEND_URL`
+- **Value:** `https://odev-portali.vercel.app`
+
+(Kodda bu adres zaten izinli; yine de ortam değişkeni ile ek listeye alınır.)
+
+---
+
+## 4. İsteğe bağlı: 429 alıyorsanız
 
 Render → Backend servisi → **Environment**:
 
@@ -69,6 +80,7 @@ Kaydedip servisi yeniden başlatın (Manual Deploy veya otomatik deploy).
 |-----------------|---------------|----------------|
 | Push            | Kendi PC      | `git push origin main` |
 | Migration       | Kendi PC      | `cd backend` sonra `DATABASE_URL="postgresql://..." npx prisma migrate deploy` (URL = Render Environment’tan) |
+| FRONTEND_URL    | Render Env    | Key: `FRONTEND_URL`, Value: `https://odev-portali.vercel.app` (CORS) |
 | RATE_LIMIT_MAX  | Render Env    | Key: `RATE_LIMIT_MAX`, Value: `800` |
 
-Bu üçünü yaptıktan sonra backend güncel olur, tablolar oluşur ve 429 riski azalır.
+Bunlardan sonra backend güncel olur, CORS çalışır ve 429 riski azalır.
