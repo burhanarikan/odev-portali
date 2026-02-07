@@ -19,10 +19,16 @@ const dateString = z.string().min(1).transform((s) => {
   return d.toISOString();
 });
 
+const homeworkTypeEnum = z.enum(['TEXT', 'FILE', 'AUDIO', 'MIXED']);
+
 /** Hocanın oluşturduğu taslak (Homework) alanları */
 export const homeworkSchema = z.object({
   title: z.string().min(1, 'Başlık gerekli'),
   description: z.string().optional(),
+  instructions: z.string().optional(),
+  type: homeworkTypeEnum.default('TEXT'),
+  fileUrl: z.string().url().optional().or(z.literal('')),
+  audioUrl: z.string().url().optional().or(z.literal('')),
   levelId: z.string().uuid('Geçersiz seviye ID'),
   weekNumber: z.number().int().min(1).max(16),
 });
@@ -39,6 +45,10 @@ const assignmentFields = z.object({
   attachments: z.array(z.string()).default([]),
   classId: z.string().uuid().optional(),
   studentIds: z.array(z.string().uuid()).optional(),
+  homeworkType: homeworkTypeEnum.optional(),
+  homeworkInstructions: z.string().optional(),
+  homeworkFileUrl: z.string().optional(),
+  homeworkAudioUrl: z.string().optional(),
 });
 
 export const assignmentSchema = assignmentFields.refine(
@@ -52,6 +62,8 @@ export const submissionSchema = z.object({
   assignmentId: z.string().uuid(),
   contentText: z.string().optional(),
   attachments: z.array(z.string()).default([]),
+  audioUrl: z.string().url().optional().or(z.literal('')),
+  fileUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export const evaluationSchema = z.object({

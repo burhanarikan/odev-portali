@@ -21,6 +21,8 @@ export const studentApi = {
     assignmentId: string;
     contentText?: string;
     attachments?: string[];
+    audioUrl?: string;
+    fileUrl?: string;
   }) => {
     const response = await api.post<Submission>('/student/submissions', data);
     return response.data;
@@ -34,5 +36,14 @@ export const studentApi = {
   getEvaluations: async () => {
     const response = await api.get<Evaluation[]>('/student/evaluations');
     return response.data;
+  },
+
+  getMyPortfolio: async () => {
+    const response = await api.get('/student/portfolio');
+    return response.data as {
+      student: { id: string; name: string; email: string; class: string; level: string };
+      evaluations: Array<{ assignmentTitle: string; weekNumber: number; score: number | null; feedback: string | null; submittedAt: string; evaluatedAt: string | null }>;
+      summary: { totalAssignments: number; submittedCount: number; evaluatedCount: number; averageScore: number | null; totalSessions: number; attendedSessions: number; attendanceRate: number; absenceRate: number };
+    };
   },
 };

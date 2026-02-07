@@ -31,7 +31,51 @@ export const analyticsApi = {
     }>('/analytics/course-end-report');
     return response.data;
   },
+
+  /** Hoca iş yükü (ADMIN): ödev sayısı, değerlendirme, 24h içinde geri bildirim */
+  getTeacherWorkload: async () => {
+    const response = await api.get<TeacherWorkloadItem[]>('/analytics/teacher-workload');
+    return response.data;
+  },
+
+  /** Öğrenci portfolyosu (TEACHER/ADMIN): studentId = Student.id */
+  getStudentPortfolio: async (studentId: string) => {
+    const response = await api.get<StudentPortfolio>(`/analytics/portfolio/${studentId}`);
+    return response.data;
+  },
 };
+
+export interface TeacherWorkloadItem {
+  teacherId: string;
+  teacherName: string;
+  assignmentCount: number;
+  submissionCount: number;
+  evaluatedCount: number;
+  evaluatedWithin24h: number;
+  lastEvaluationAt: string | null;
+}
+
+export interface StudentPortfolio {
+  student: { id: string; name: string; email: string; class: string; level: string };
+  evaluations: Array<{
+    assignmentTitle: string;
+    weekNumber: number;
+    score: number | null;
+    feedback: string | null;
+    submittedAt: string;
+    evaluatedAt: string | null;
+  }>;
+  summary: {
+    totalAssignments: number;
+    submittedCount: number;
+    evaluatedCount: number;
+    averageScore: number | null;
+    totalSessions: number;
+    attendedSessions: number;
+    attendanceRate: number;
+    absenceRate: number;
+  };
+}
 
 export interface StudentsProgressItem {
   studentId: string;

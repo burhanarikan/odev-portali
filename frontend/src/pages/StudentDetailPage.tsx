@@ -4,7 +4,7 @@ import { teacherApi, type TeacherStudentDetail } from '@/api/teacher.api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, User, Mail, Calendar, FileText } from 'lucide-react';
+import { ArrowLeft, User, Mail, Calendar, FileText, BookOpen } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 
@@ -68,10 +68,16 @@ export const StudentDetailPage = () => {
             <span>{student.email}</span>
           </div>
           {student.class ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="secondary">
                 {student.class.level.name} - {student.class.name}
               </Badge>
+              <Link to={`/students/${id}/portfolio`}>
+                <Button variant="outline" size="sm" className="gap-1">
+                  <BookOpen className="h-4 w-4" />
+                  Öğrenim yolculuğu
+                </Button>
+              </Link>
             </div>
           ) : (
             <Badge variant="outline">Sınıf atanmadı</Badge>

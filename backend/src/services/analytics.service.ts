@@ -285,4 +285,138 @@ export class AnalyticsService {
       averageScore: evaluatedSubmissions > 0 ? totalScore / evaluatedSubmissions : 0,
     };
   }
+
+  /** Yönetim: Hoca iş yükü – kim kaç ödev vermiş, geri bildirim süresi */
+  async getTeacherWorkload(): Promise<Array<{
+    teacherId: string;
+    teacherName: string;
+    assignmentCount: number;
+    submissionCount: number;
+    evaluatedCount: number;
+    evaluatedWithin24h: number;
+    lastEvaluationAt: Date | null;
+  }>> {
+    const teachers = await prisma.teacher.findMany({
+      include: {
+        user: { select: { name: true } },
+        assignments: {
+          include: {
+            submissions: {
+              include: {
+                evaluation: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    return teachers.map((t) => {
+      let submissionCount = 0;
+      let evaluatedCount = 0;
+      let evaluatedWithin24h = 0;
+      let lastEvalAt: Date | null = null;
+      for (const a of t.assignments) {
+        for (const s of a.submissions) {
+          submissionCount++;
+          if (s.evaluation) {
+            evaluatedCount++;
+            const evalTime = new Date(s.evaluation.createdAt).getTime();
+            if (now - evalTime <= dayMs) evaluatedWithin24h++;
+            if (!lastEvalAt || evalTime > lastEvalAt.getTime()) lastEvalAt = new Date(s.evaluation.createdAt);
+          }
+        }
+      }
+      return {
+        teacherId: t.id,
+        teacherName: t.user.name,
+        assignmentCount: t.assignments.length,
+        submissionCount,
+        evaluatedCount,
+        evaluatedWithin24h,
+        lastEvaluationAt: lastEvalAt,
+      };
+    });
+  }
+
+  /** Öğrenci portfolyosu (kur geçmişi): notlar, devamsızlık, hoca geri bildirimleri */
+  async getStudentPortfolio(studentId: string) {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        user: { select: { name: true, email: true } },
+        class: { include: { level: true } },
+        submissions: {
+          include: {
+            assignment: { select: { title: true, weekNumber: true } },
+            evaluation: true,
+          },
+          orderBy: { submittedAt: 'desc' },
+        },
+      },
+    });
+    if (!student) throw new Error('Student not found');
+
+    const evaluations = student.submissions
+      .filter((s) => s.evaluation)
+      .map((s) => ({
+        assignmentTitle: s.assignment.title,
+        weekNumber: s.assignment.weekNumber,
+        score: s.evaluation ? Number(s.evaluation.score) : null,
+        feedback: s.evaluation?.feedback ?? null,
+        submittedAt: s.submittedAt,
+        evaluatedAt: s.evaluation?.createdAt ?? null,
+      }));
+
+    const totalAssignments = await prisma.assignment.count({
+      where: {
+        levelId: student.class.levelId,
+        isDraft: false,
+      },
+    });
+    const submittedCount = student.submissions.length;
+    const evaluatedCount = evaluations.length;
+    const avgScore = evaluatedCount > 0
+      ? evaluations.reduce((s, e) => s + (e.score ?? 0), 0) / evaluatedCount
+      : null;
+
+    const sessionIds = await prisma.attendanceSession.findMany({
+      where: { classId: student.classId },
+      select: { id: true },
+    }).then((s) => s.map((x) => x.id));
+    const attendedCount = await prisma.attendanceRecord.count({
+      where: {
+        sessionId: { in: sessionIds },
+        studentId: student.id,
+        locationOk: true,
+      },
+    });
+    const totalSessions = sessionIds.length;
+    const attendanceRate = totalSessions > 0 ? (attendedCount / totalSessions) * 100 : 100;
+    const absenceRate = 100 - attendanceRate;
+
+    return {
+      student: {
+        id: student.id,
+        name: student.user.name,
+        email: student.user.email,
+        class: student.class.name,
+        level: student.class.level?.name ?? '—',
+      },
+      evaluations,
+      summary: {
+        totalAssignments,
+        submittedCount,
+        evaluatedCount,
+        averageScore: avgScore != null ? Math.round(avgScore * 100) / 100 : null,
+        totalSessions,
+        attendedSessions: attendedCount,
+        attendanceRate: Math.round(attendanceRate * 100) / 100,
+        absenceRate: Math.round(absenceRate * 100) / 100,
+      },
+    };
+  }
 }

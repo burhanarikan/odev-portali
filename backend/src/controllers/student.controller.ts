@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { StudentService } from '../services/student.service';
+import { AnalyticsService } from '../services/analytics.service';
 import { submissionSchema } from '../utils/validators';
 import { errorHandler, AppError } from '../middleware/errorHandler';
+import { prisma } from '../config/database';
 
 const studentService = new StudentService();
+const analyticsService = new AnalyticsService();
 
 export const getAssignments = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -53,6 +56,21 @@ export const getEvaluations = async (req: Request, res: Response, next: NextFunc
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     const evaluations = await studentService.getEvaluations(req.user.userId);
     res.json(evaluations);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const getMyPortfolio = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const student = await prisma.student.findUnique({
+      where: { userId: req.user.userId },
+      select: { id: true },
+    });
+    if (!student) return res.status(404).json({ error: 'Öğrenci kaydı bulunamadı' });
+    const portfolio = await analyticsService.getStudentPortfolio(student.id);
+    res.json(portfolio);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
   }

@@ -66,6 +66,10 @@ export const teacherApi = {
     attachments?: string[];
     classId?: string;
     studentIds?: string[];
+    homeworkType?: 'TEXT' | 'FILE' | 'AUDIO' | 'MIXED';
+    homeworkInstructions?: string;
+    homeworkFileUrl?: string;
+    homeworkAudioUrl?: string;
   }) => {
     const response = await api.post<{
       assignment: Assignment;

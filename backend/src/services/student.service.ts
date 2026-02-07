@@ -162,6 +162,8 @@ export class StudentService {
         studentId: student.id,
         contentText: data.contentText,
         attachments: JSON.stringify(data.attachments || []),
+        audioUrl: data.audioUrl || null,
+        fileUrl: data.fileUrl || null,
         isLate,
       },
       include: {

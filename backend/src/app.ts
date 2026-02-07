@@ -9,6 +9,9 @@ import authRoutes from './routes/auth.routes';
 import studentRoutes from './routes/student.routes';
 import teacherRoutes from './routes/teacher.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import uploadRoutes from './routes/upload.routes';
+import attendanceRoutes from './routes/attendance.routes';
+import announcementRoutes from './routes/announcement.routes';
 
 const app = express();
 
@@ -43,6 +46,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

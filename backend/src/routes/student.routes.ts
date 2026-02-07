@@ -5,6 +5,7 @@ import {
   submitAssignment,
   getSubmission,
   getEvaluations,
+  getMyPortfolio,
 } from '../controllers/student.controller';
 import { authenticate, authorize } from '../middleware/auth';
 
@@ -18,5 +19,6 @@ router.get('/assignments/:id', getAssignmentById);
 router.post('/submissions', submitAssignment);
 router.get('/submissions/:assignmentId', getSubmission);
 router.get('/evaluations', getEvaluations);
+router.get('/portfolio', getMyPortfolio);
 
 export default router;

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi, type StudentsProgressItem } from '@/api';
+import { attendanceApi } from '@/api/attendance.api';
 import { useAuthStore } from '@/store/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import {
   BarChart3,
   Calendar,
   ClipboardList,
+  Briefcase,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
@@ -27,6 +29,16 @@ export const AnalyticsPage = () => {
   const { data: studentsProgress = [], isLoading: progressLoading } = useQuery({
     queryKey: ['analytics', 'students-progress'],
     queryFn: analyticsApi.getStudentsProgress,
+    enabled: isAdmin,
+  });
+  const { data: absenceReport = [], isLoading: absenceLoading } = useQuery({
+    queryKey: ['attendance', 'absence-report'],
+    queryFn: () => attendanceApi.getAbsenceReport(),
+    enabled: !!user && (user.role === 'TEACHER' || user.role === 'ADMIN'),
+  });
+  const { data: teacherWorkload = [], isLoading: workloadLoading } = useQuery({
+    queryKey: ['analytics', 'teacher-workload'],
+    queryFn: analyticsApi.getTeacherWorkload,
     enabled: isAdmin,
   });
 
@@ -233,6 +245,112 @@ export const AnalyticsPage = () => {
                         <td className="py-2 text-right">
                           <Badge variant={row.completionRate >= 80 ? 'default' : row.completionRate >= 50 ? 'secondary' : 'destructive'}>
                             %{Math.round(row.completionRate)}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Hoca iş yükü (ADMIN) */}
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Briefcase className="h-5 w-5" />
+              <span>Hoca iş yükü</span>
+            </CardTitle>
+            <CardDescription>
+              Kim kaç ödev vermiş, kaç teslime 24 saat içinde geri bildirim yapılmış
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {workloadLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : teacherWorkload.length === 0 ? (
+              <p className="text-sm text-gray-500">Veri yok.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 font-medium">Hoca</th>
+                      <th className="text-right py-2 font-medium">Ödev</th>
+                      <th className="text-right py-2 font-medium">Teslim</th>
+                      <th className="text-right py-2 font-medium">Değerlendirilen</th>
+                      <th className="text-right py-2 font-medium">24h içinde</th>
+                      <th className="text-left py-2 font-medium">Son değerlendirme</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teacherWorkload.map((row) => (
+                      <tr key={row.teacherId} className="border-b hover:bg-gray-50">
+                        <td className="py-2 font-medium">{row.teacherName}</td>
+                        <td className="py-2 text-right">{row.assignmentCount}</td>
+                        <td className="py-2 text-right">{row.submissionCount}</td>
+                        <td className="py-2 text-right">{row.evaluatedCount}</td>
+                        <td className="py-2 text-right">{row.evaluatedWithin24h}</td>
+                        <td className="py-2 text-gray-600">
+                          {row.lastEvaluationAt ? formatDate(row.lastEvaluationAt) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Devamsızlık raporu (yoklama) */}
+      {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <ClipboardList className="h-5 w-5" />
+              <span>Devamsızlık raporu (yoklama)</span>
+            </CardTitle>
+            <CardDescription>
+              Toplam yoklama oturumu ve katılım; devamsızlık yüzdesi
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {absenceLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : absenceReport.length === 0 ? (
+              <p className="text-sm text-gray-500">Henüz yoklama verisi yok.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 font-medium">Öğrenci</th>
+                      <th className="text-left py-2 font-medium">Sınıf / Seviye</th>
+                      <th className="text-right py-2 font-medium">Katılım</th>
+                      <th className="text-right py-2 font-medium">Devamsızlık</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {absenceReport.map((row) => (
+                      <tr key={row.studentId} className="border-b hover:bg-gray-50">
+                        <td className="py-2 font-medium">{row.studentName}</td>
+                        <td className="py-2">{row.className} · {row.levelName}</td>
+                        <td className="py-2 text-right">
+                          {row.attendedSessions} / {row.totalSessions} (%{row.attendanceRate.toFixed(1)})
+                        </td>
+                        <td className="py-2 text-right">
+                          <Badge variant={row.absenceRate > 30 ? 'destructive' : row.absenceRate > 15 ? 'secondary' : 'outline'}>
+                            %{row.absenceRate.toFixed(1)}
                           </Badge>
                         </td>
                       </tr>

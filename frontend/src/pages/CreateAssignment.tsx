@@ -11,11 +11,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useCreateAssignment, useLevels, useTeacherStudents } from '@/hooks/useAssignments';
 import { useToast } from '@/components/ui/use-toast';
 import { teacherApi } from '@/api/teacher.api';
-import { ArrowLeft, Users, FileText, AlertTriangle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Users, FileText, AlertTriangle, ExternalLink, Mic, Upload } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { SimilarAssignment } from '@/types';
+import type { SimilarAssignment, HomeworkType } from '@/types';
+import { uploadApi } from '@/api/upload.api';
 
 const assignmentSchema = z.object({
   title: z.string().min(1, 'Başlık gereklidir'),
@@ -42,6 +43,11 @@ export const CreateAssignment = () => {
   const [targetType, setTargetType] = useState<TargetType>('level');
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [homeworkType, setHomeworkType] = useState<HomeworkType>('TEXT');
+  const [homeworkInstructions, setHomeworkInstructions] = useState('');
+  const [homeworkFileUrl, setHomeworkFileUrl] = useState<string | null>(null);
+  const [homeworkAudioUrl, setHomeworkAudioUrl] = useState<string | null>(null);
+  const [uploadingHomeworkFile, setUploadingHomeworkFile] = useState(false);
 
   const form = useForm<AssignmentFormData>({
     resolver: zodResolver(assignmentSchema),
@@ -107,6 +113,10 @@ export const CreateAssignment = () => {
     };
     if (targetType === 'class' && selectedClassId) backendData.classId = selectedClassId;
     if (targetType === 'students' && selectedStudentIds.length > 0) backendData.studentIds = selectedStudentIds;
+    if (homeworkType) backendData.homeworkType = homeworkType;
+    if (homeworkInstructions.trim()) backendData.homeworkInstructions = homeworkInstructions.trim();
+    if (homeworkFileUrl) backendData.homeworkFileUrl = homeworkFileUrl;
+    if (homeworkAudioUrl) backendData.homeworkAudioUrl = homeworkAudioUrl;
     createMutation.mutate(backendData as Parameters<typeof createMutation.mutate>[0], {
       onSuccess: () => {
         toast({
@@ -296,6 +306,132 @@ export const CreateAssignment = () => {
                 {...form.register('description')}
               />
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">İçerik türü</CardTitle>
+                <CardDescription>
+                  Metin, dosya, ses veya karışık ödev seçin; talimat ve ek medya ekleyin.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Ödev tipi</Label>
+                  <Select
+                    value={homeworkType}
+                    onValueChange={(v) => setHomeworkType(v as HomeworkType)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="TEXT">Metin</SelectItem>
+                      <SelectItem value="FILE">Dosya (PDF/resim)</SelectItem>
+                      <SelectItem value="AUDIO">Ses</SelectItem>
+                      <SelectItem value="MIXED">Karışık</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(homeworkType === 'TEXT' || homeworkType === 'MIXED') && (
+                  <div className="space-y-2">
+                    <Label htmlFor="instructions">Talimatlar (instructions)</Label>
+                    <Textarea
+                      id="instructions"
+                      placeholder="Öğrenciye verilecek talimatlar"
+                      className="min-h-[80px]"
+                      value={homeworkInstructions}
+                      onChange={(e) => setHomeworkInstructions(e.target.value)}
+                    />
+                  </div>
+                )}
+                {(homeworkType === 'FILE' || homeworkType === 'MIXED') && (
+                  <div className="space-y-2">
+                    <Label>Ses dosyası / Ek dosya yükle</Label>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <label className="cursor-pointer flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500">
+                        <Upload className="h-4 w-4" />
+                        <span>Dosya seç</span>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp3,.webm,.m4a"
+                          disabled={uploadingHomeworkFile}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setUploadingHomeworkFile(true);
+                            try {
+                              const { url } = await uploadApi.uploadFile(file);
+                              if (file.type.startsWith('audio/')) setHomeworkAudioUrl(url);
+                              else setHomeworkFileUrl(url);
+                            } catch (err) {
+                              toast({
+                                title: 'Yükleme hatası',
+                                description: (err as Error).message,
+                                variant: 'destructive',
+                              });
+                            } finally {
+                              setUploadingHomeworkFile(false);
+                            }
+                          }}
+                        />
+                      </label>
+                      {uploadingHomeworkFile && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {homeworkFileUrl && (
+                        <Badge variant="secondary" className="gap-1">
+                          Dosya yüklendi
+                          <button type="button" onClick={() => setHomeworkFileUrl(null)} className="ml-1 hover:bg-muted rounded">×</button>
+                        </Badge>
+                      )}
+                      {homeworkAudioUrl && (
+                        <Badge variant="secondary" className="gap-1">
+                          Ses yüklendi
+                          <button type="button" onClick={() => setHomeworkAudioUrl(null)} className="ml-1 hover:bg-muted rounded">×</button>
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {homeworkType === 'AUDIO' && (
+                  <div className="space-y-2">
+                    <Label>Ses dosyası yükle</Label>
+                    <label className="cursor-pointer flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500">
+                      <Mic className="h-4 w-4" />
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="audio/*,.mp3,.webm,.m4a"
+                        disabled={uploadingHomeworkFile}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploadingHomeworkFile(true);
+                          try {
+                            const { url } = await uploadApi.uploadFile(file);
+                            setHomeworkAudioUrl(url);
+                          } catch (err) {
+                            toast({
+                              title: 'Yükleme hatası',
+                              description: (err as Error).message,
+                              variant: 'destructive',
+                            });
+                          } finally {
+                            setUploadingHomeworkFile(false);
+                          }
+                        }}
+                      />
+                      <span>Ses dosyası seç</span>
+                    </label>
+                    {homeworkAudioUrl && (
+                      <Badge variant="secondary">
+                        Ses yüklendi
+                        <button type="button" onClick={() => setHomeworkAudioUrl(null)} className="ml-1 hover:bg-muted rounded">×</button>
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">

@@ -57,3 +57,24 @@ export const getCourseEndReport = async (_req: Request, res: Response, next: Nex
     errorHandler(error as AppError, _req, res, next);
   }
 };
+
+/** Hoca iş yükü: kim kaç ödev vermiş, kaçı değerlendirilmiş, 24 saat içinde geri bildirim (ADMIN) */
+export const getTeacherWorkload = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const list = await analyticsService.getTeacherWorkload();
+    res.json(list);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+/** Öğrenci portfolyosu (kur geçmişi): studentId = Student.id (TEACHER/ADMIN) */
+export const getStudentPortfolio = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { studentId } = req.params;
+    const portfolio = await analyticsService.getStudentPortfolio(studentId ?? '');
+    res.json(portfolio);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};

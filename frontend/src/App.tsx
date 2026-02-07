@@ -12,6 +12,11 @@ import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { SubmissionsPage } from '@/pages/SubmissionsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { EvaluationsPage } from '@/pages/EvaluationsPage';
+import { AttendancePage } from '@/pages/AttendancePage';
+import { AttendanceJoinPage } from '@/pages/AttendanceJoinPage';
+import { AnnouncementsPage } from '@/pages/AnnouncementsPage';
+import { PortfolioPage } from '@/pages/PortfolioPage';
+import { StudentPortfolioPage } from '@/pages/StudentPortfolioPage';
 import { NotFound } from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -90,6 +95,7 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<StudentDetailPage />} />
+          <Route path="portfolio" element={<StudentPortfolioPage />} />
         </Route>
 
         <Route path="/analytics" element={
@@ -114,6 +120,38 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<EvaluationsPage />} />
+        </Route>
+
+        <Route path="/attendance" element={
+          <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<AttendancePage />} />
+        </Route>
+
+        <Route path="/attendance/join" element={
+          <ProtectedRoute allowedRole="STUDENT">
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<AttendanceJoinPage />} />
+        </Route>
+
+        <Route path="/announcements" element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<AnnouncementsPage />} />
+        </Route>
+
+        <Route path="/portfolio" element={
+          <ProtectedRoute allowedRole="STUDENT">
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<PortfolioPage />} />
         </Route>
 
         <Route path="/settings" element={

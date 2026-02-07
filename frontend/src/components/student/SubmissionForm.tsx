@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSubmitAssignment } from '@/hooks/useAssignments';
 import { useToast } from '@/components/ui/use-toast';
-import { Upload, X, FileText } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
+import { uploadApi } from '@/api/upload.api';
+import { Upload, X, FileText, Mic, Square, Loader2 } from 'lucide-react';
+import { AudioPlayer } from '@/components/ui/audio-player';
 
 const submissionSchema = z.object({
   contentText: z.string().optional(),
@@ -24,44 +25,132 @@ interface SubmissionFormProps {
 
 export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [fileUrls, setFileUrls] = useState<string[]>([]);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const submitMutation = useSubmitAssignment();
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<SubmissionFormData>({
     resolver: zodResolver(submissionSchema),
   });
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setUploadedFiles(prev => [...prev, ...files]);
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const urls: string[] = [];
+      for (const file of files) {
+        const { url } = await uploadApi.uploadFile(file);
+        urls.push(url);
+      }
+      setUploadedFiles((prev) => [...prev, ...files]);
+      setFileUrls((prev) => [...prev, ...urls]);
+    } catch (e) {
+      toast({
+        title: 'Yükleme hatası',
+        description: (e as Error).message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    setFileUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        setRecordedBlob(blob);
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecording(true);
+    } catch {
+      toast({
+        title: 'Mikrofon erişimi',
+        description: 'Ses kaydı için mikrofon izni gerekli.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+      setRecording(false);
+    }
+  };
+
+  const uploadRecordedAudio = async (): Promise<string | null> => {
+    if (!recordedBlob) return null;
+    setUploading(true);
+    try {
+      const file = new File([recordedBlob], 'ses-kaydi.webm', { type: 'audio/webm' });
+      const { url } = await uploadApi.uploadFile(file);
+      setAudioUrl(url);
+      setRecordedBlob(null);
+      return url;
+    } catch (e) {
+      toast({
+        title: 'Ses yükleme hatası',
+        description: (e as Error).message,
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setUploading(false);
+    }
   };
 
   const onSubmit = async (data: SubmissionFormData) => {
     try {
-      const attachments = uploadedFiles.map(file => file.name);
-      
+      let finalAudioUrl: string | null | undefined = audioUrl;
+      if (recordedBlob && !finalAudioUrl) {
+        finalAudioUrl = await uploadRecordedAudio();
+      }
+      const firstFileUrl = fileUrls[0] || undefined;
       await submitMutation.mutateAsync({
         assignmentId,
         contentText: data.contentText,
-        attachments,
+        attachments: fileUrls.length ? fileUrls : (data.attachments || []),
+        audioUrl: finalAudioUrl ?? undefined,
+        fileUrl: firstFileUrl ?? undefined,
       });
 
       toast({
-        title: "Başarılı",
-        description: "Ödeviniz başarıyla teslim edildi.",
+        title: 'Başarılı',
+        description: 'Ödeviniz başarıyla teslim edildi.',
       });
 
       form.reset();
       setUploadedFiles([]);
+      setFileUrls([]);
+      setAudioUrl(null);
+      setRecordedBlob(null);
     } catch (error) {
       toast({
-        title: "Hata",
-        description: "Ödev teslim edilirken bir hata oluştu.",
-        variant: "destructive",
+        title: 'Hata',
+        description: 'Ödev teslim edilirken bir hata oluştu.',
+        variant: 'destructive',
       });
     }
   };
@@ -80,7 +169,7 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <span className="text-sm font-medium leading-none">Dosya Ekle</span>
+        <span className="text-sm font-medium leading-none">Dosya Ekle (PDF / Resim)</span>
         <Card className="border-dashed">
           <CardContent className="p-6">
             <div className="text-center">
@@ -91,17 +180,16 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
                 </span>
                 <input
                   id="file-upload"
-                  name="attachments"
                   type="file"
                   multiple
                   className="hidden"
-                  onChange={handleFileUpload}
+                  onChange={handleFileSelect}
                   accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.zip"
-                  autoComplete="off"
+                  disabled={uploading}
                 />
               </label>
               <p className="text-xs text-gray-500 mt-1">
-                PDF, DOC, DOCX, TXT, JPG, PNG, ZIP (max 10MB)
+                PDF, DOC, resim (yükleme Blob depolamaya gider)
               </p>
             </div>
           </CardContent>
@@ -117,16 +205,8 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
                 <div className="flex items-center space-x-2">
                   <FileText className="h-4 w-4 text-gray-500" />
                   <span className="text-sm">{file.name}</span>
-                  <span className="text-xs text-gray-500">
-                    ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                  </span>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeFile(index)}
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={() => removeFile(index)}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -135,14 +215,52 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
         </div>
       )}
 
-      <Button 
-        type="submit" 
+      <div className="space-y-2">
+        <span className="text-sm font-medium leading-none">Ses Kaydı (tarayıcı)</span>
+        <Card className="border-dashed">
+          <CardContent className="p-4 space-y-3">
+            {!recording && !recordedBlob && !audioUrl && (
+              <Button type="button" variant="outline" onClick={startRecording} className="gap-2">
+                <Mic className="h-4 w-4" />
+                Kayda Başla
+              </Button>
+            )}
+            {recording && (
+              <Button type="button" variant="destructive" onClick={stopRecording} className="gap-2">
+                <Square className="h-4 w-4" />
+                Durdur
+              </Button>
+            )}
+            {recordedBlob && !audioUrl && (
+              <div className="flex flex-wrap items-center gap-2">
+                <audio controls src={URL.createObjectURL(recordedBlob)} className="max-w-full" />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={uploadRecordedAudio}
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Yükle'}
+                </Button>
+              </div>
+            )}
+            {audioUrl && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-green-600">Ses yüklendi.</span>
+                <AudioPlayer src={audioUrl} showSpeed={true} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Button
+        type="submit"
         className="w-full"
-        disabled={submitMutation.isPending}
+        disabled={submitMutation.isPending || uploading}
       >
-        {submitMutation.isPending ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : null}
+        {submitMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         Ödevi Teslim Et
       </Button>
     </form>

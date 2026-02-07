@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate, isOverdue } from '@/utils/formatDate';
-import { Calendar, Clock, FileText, Users, Plus, User } from 'lucide-react';
+import { Calendar, Clock, FileText, Users, Plus, User, Mic, Upload, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -150,12 +150,19 @@ export const TeacherDashboard = () => {
                   </div>
                   <CardDescription className="space-y-0.5">
                     <span>{assignment.level?.name} – {assignment.weekNumber}. Hafta</span>
-                    {isAdmin && assignment.teacher?.user && (
-                      <span className="flex items-center gap-1 mt-1 text-gray-600">
-                        <User className="h-3.5 w-3.5" />
-                        {assignment.teacher.user.name}
-                      </span>
-                    )}
+                    <span className="flex items-center gap-1.5 mt-1 text-gray-500 flex-wrap">
+                      {(assignment as { homework?: { type?: string } }).homework?.type === 'AUDIO' && <span title="Ses"><Mic className="h-3.5 w-3.5" /></span>}
+                      {(assignment as { homework?: { type?: string } }).homework?.type === 'FILE' && <span title="Dosya"><Upload className="h-3.5 w-3.5" /></span>}
+                      {(assignment as { homework?: { type?: string } }).homework?.type === 'TEXT' && <span title="Metin"><FileText className="h-3.5 w-3.5" /></span>}
+                      {(assignment as { homework?: { type?: string } }).homework?.type === 'MIXED' && <span title="Karışık"><Layers className="h-3.5 w-3.5" /></span>}
+                      {isAdmin && assignment.teacher?.user && (
+                        <>
+                          <span className="text-gray-400">·</span>
+                          <User className="h-3.5 w-3.5" />
+                          <span>{assignment.teacher.user.name}</span>
+                        </>
+                      )}
+                    </span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

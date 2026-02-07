@@ -20,6 +20,7 @@ import { formatDate, formatRelativeTime } from '@/utils/formatDate';
 import { Calendar, Clock, User, FileText, Download, AlertCircle, ArrowLeft, ChevronDown, ChevronUp, Trash2, AlertTriangle } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { SubmissionForm } from '@/components/student/SubmissionForm';
+import { AudioPlayer } from '@/components/ui/audio-player';
 
 export const AssignmentDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -241,6 +242,25 @@ export const AssignmentDetails = () => {
                         </div>
                       </div>
                     )}
+                    {(submission as { audioUrl?: string | null }).audioUrl && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Ses Kaydı</h4>
+                        <AudioPlayer src={(submission as { audioUrl?: string }).audioUrl!} showSpeed />
+                      </div>
+                    )}
+                    {(submission as { fileUrl?: string | null }).fileUrl && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Yüklenen Dosya</h4>
+                        <a
+                          href={(submission as { fileUrl: string }).fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-sm flex items-center gap-1"
+                        >
+                          <FileText className="h-4 w-4" /> Dosyayı aç
+                        </a>
+                      </div>
+                    )}
 
                     {submission!.evaluation && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -323,6 +343,8 @@ type SubmissionItem = {
   submittedAt: string;
   isLate: boolean;
   contentText?: string | null;
+  audioUrl?: string | null;
+  fileUrl?: string | null;
   evaluation?: { score?: number; feedback?: string; accepted: boolean } | null;
   student?: { user?: { name: string } } | null;
 };
@@ -455,6 +477,27 @@ function SubmissionEvaluationForm({
           <div className="mt-1 p-3 bg-white border rounded text-sm text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto">
             {submission.contentText}
           </div>
+        </div>
+      )}
+      {submission.audioUrl && (
+        <div>
+          <Label className="text-xs text-gray-500">Öğrenci ses kaydı</Label>
+          <div className="mt-1">
+            <AudioPlayer src={submission.audioUrl} showSpeed />
+          </div>
+        </div>
+      )}
+      {submission.fileUrl && (
+        <div>
+          <Label className="text-xs text-gray-500">Yüklenen dosya</Label>
+          <a
+            href={submission.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 text-sm text-blue-600 hover:underline flex items-center gap-1"
+          >
+            <FileText className="h-4 w-4" /> Dosyayı aç / indir
+          </a>
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-3">

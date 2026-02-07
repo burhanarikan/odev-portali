@@ -30,6 +30,8 @@ export interface Level {
   createdAt: string;
 }
 
+export type HomeworkType = 'TEXT' | 'FILE' | 'AUDIO' | 'MIXED';
+
 export interface Class {
   id: string;
   name: string;
@@ -61,6 +63,10 @@ export interface Assignment {
     id: string;
     title: string;
     teacherId: string;
+    type?: HomeworkType;
+    instructions?: string | null;
+    fileUrl?: string | null;
+    audioUrl?: string | null;
   } | null;
   targets?: AssignmentTarget[];
   submissions?: Submission[];
@@ -114,6 +120,8 @@ export interface Submission {
   isLate: boolean;
   contentText?: string;
   attachments: string[];
+  audioUrl?: string | null;
+  fileUrl?: string | null;
   createdAt: string;
   assignment: Assignment;
   student?: {

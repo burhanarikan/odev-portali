@@ -19,6 +19,13 @@ enum TargetType {
   GROUP
 }
 
+enum HomeworkType {
+  TEXT
+  FILE
+  AUDIO
+  MIXED
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String
@@ -28,8 +35,9 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  student Student?
-  teacher Teacher?
+  student      Student?
+  teacher      Teacher?
+  announcements Announcement[]
 
   @@map("users")
 }
@@ -53,9 +61,10 @@ model Class {
   levelId   String   @map("level_id")
   createdAt DateTime @default(now()) @map("created_at")
 
-  level   Level    @relation(fields: [levelId], references: [id], onDelete: Cascade)
-  students Student[]
-  assignmentTargets AssignmentTarget[]
+  level               Level                @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  students            Student[]
+  assignmentTargets   AssignmentTarget[]
+  attendanceSessions  AttendanceSession[]
 
   @@unique([name, levelId])
   @@map("classes")
@@ -68,11 +77,12 @@ model Student {
   enrollmentDate DateTime @default(now()) @map("enrollment_date")
   createdAt      DateTime @default(now()) @map("created_at")
 
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  class             Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
-  submissions       Submission[]
-  assignmentTargets AssignmentTarget[]
-  groupMembers      GroupMember[]
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class              Class                @relation(fields: [classId], references: [id], onDelete: Cascade)
+  submissions        Submission[]
+  assignmentTargets  AssignmentTarget[]
+  groupMembers       GroupMember[]
+  attendanceRecords  AttendanceRecord[]
 
   @@map("students")
 }
@@ -82,25 +92,30 @@ model Teacher {
   userId    String   @unique @map("user_id")
   createdAt DateTime @default(now()) @map("created_at")
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  homeworks   Homework[]
-  assignments Assignment[]
-  groups      Group[]
-  evaluations Evaluation[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  homeworks          Homework[]
+  assignments        Assignment[]
+  groups             Group[]
+  evaluations        Evaluation[]
+  attendanceSessions AttendanceSession[]
 
   @@map("teachers")
 }
 
-/// Hocanın oluşturduğu taslak (başlık, açıklama, seviye, hafta). Aynı başlık farklı hocalarda ayrı kalır.
+/// Hocanın oluşturduğu taslak. Metin, dosya, ses veya karışık (MIXED) türünde olabilir.
 model Homework {
-  id          String   @id @default(uuid())
-  teacherId   String   @map("teacher_id")
-  title       String
-  description String?  @db.Text
-  levelId     String   @map("level_id")
-  weekNumber  Int      @map("week_number")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String      @id @default(uuid())
+  teacherId    String      @map("teacher_id")
+  title        String
+  description  String?     @db.Text
+  instructions String?     @db.Text
+  type         HomeworkType @default(TEXT)
+  fileUrl      String?
+  audioUrl     String?
+  levelId      String      @map("level_id")
+  weekNumber   Int         @map("week_number")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
   teacher     Teacher      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   level       Level        @relation(fields: [levelId], references: [id], onDelete: Cascade)
@@ -185,11 +200,13 @@ model Submission {
   id           String   @id @default(uuid())
   assignmentId String   @map("assignment_id")
   studentId    String?  @map("student_id")
-  groupId      String?  @map("group_id")
+  groupId     String?  @map("group_id")
   submittedAt  DateTime @default(now()) @map("submitted_at")
   isLate       Boolean  @map("is_late")
   contentText  String?  @db.Text @map("content_text")
   attachments  Json     @default("[]")
+  audioUrl     String?
+  fileUrl      String?
   createdAt    DateTime @default(now()) @map("created_at")
 
   assignment Assignment  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
@@ -214,4 +231,54 @@ model Evaluation {
   teacher    Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@map("evaluations")
+}
+
+/// Hoca yoklama başlattığında oluşan oturum. Kod 4–6 haneli, süre sınırlı.
+model AttendanceSession {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  classId   String   @map("class_id")
+  teacherId String   @map("teacher_id")
+  startTime DateTime @map("start_time")
+  endTime   DateTime @map("end_time")
+  latitude  Float?
+  longitude Float?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  class    Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher  Teacher            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  records  AttendanceRecord[]
+
+  @@map("attendance_sessions")
+}
+
+/// Öğrencinin bir yoklama oturumuna katılımı. Bir öğrenci aynı oturuma sadece bir kez kayıt olur.
+model AttendanceRecord {
+  id        String   @id @default(uuid())
+  sessionId String   @map("session_id")
+  studentId String   @map("student_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  latitude  Float?
+  longitude Float?
+  locationOk Boolean @default(false) @map("location_ok")
+  rejectReason String? @map("reject_reason")
+
+  session AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@map("attendance_records")
+}
+
+/// Duyurular: "Bu Cuma Speaking Club", "Haftaya sınav" vb. Admin/öğretmen oluşturur.
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  body      String   @db.Text
+  authorId  String?  @map("author_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@map("announcements")
 }
