@@ -20,29 +20,35 @@ Push sonrası Render otomatik yeni build alır ve backend güncel kodla çalış
 
 ## 2. Migration (canlı veritabanında tabloları oluşturma)
 
-**Seçenek A — Render Shell (önerilen)**
+Render’da **Shell** yoksa (ücretsiz planda olabilir) migration’ı **kendi bilgisayarınızdan** production DB’ye uygulayın.
 
-1. [Render Dashboard](https://dashboard.render.com) → Backend servisinizi seçin.
-2. Sol menüden **Shell** sekmesine girin.
-3. Açılan terminalde:
+**Kendi bilgisayarınızda (Shell olmadan böyle yapın)**
 
-```bash
-cd backend
-npx prisma migrate deploy
-```
+1. **DATABASE_URL’i alın**  
+   Render Dashboard → Backend servisi (**odev-portali-backend**) → **Environment** → `DATABASE_URL` satırındaki değeri kopyalayın (görmek için tıklayıp açın).
 
-4. `DATABASE_URL` zaten Render ortamında tanımlı olduğu için ekstra bir şey yazmanıza gerek yok.
-
-**Seçenek B — Kendi bilgisayarınızda**
-
-Canlı veritabanı bağlantı dizesine sahipseniz:
+2. **Proje kökünde** terminalde:
 
 ```bash
 cd backend
-DATABASE_URL="postgresql://..." npx prisma migrate deploy
+DATABASE_URL="buraya_yapistiirin" npx prisma migrate deploy
 ```
 
-(`DATABASE_URL` değerini Render → Environment’tan kopyalayın.)
+`DATABASE_URL="..."` kısmına kopyaladığınız tam connection string’i yapıştırın (tırnak içinde). Örnek:
+
+```bash
+DATABASE_URL="postgresql://user:pass@host.neon.tech/odev_portali?sslmode=require" npx prisma migrate deploy
+```
+
+3. **Çıktıya bakın**  
+   - “Applied X migrations” gibi bir satır görürseniz migration tamam demektir.  
+   - Hata alırsanız (ör. “relation already exists”, “column already exists”) tam hata mesajını kopyalayıp saklayın; buna göre bir sonraki adım söylenebilir.
+
+**Seçenek: Render Shell (varsa)**
+
+1. Render Dashboard → Backend servisi → **Shell**.
+2. Shell’de: `cd /opt/render/project/src/backend && npx prisma migrate deploy`  
+   (Ortamda `DATABASE_URL` zaten vardır.)
 
 ---
 
@@ -62,7 +68,7 @@ Kaydedip servisi yeniden başlatın (Manual Deploy veya otomatik deploy).
 | Adım            | Nerede        | Komut / İşlem |
 |-----------------|---------------|----------------|
 | Push            | Kendi PC      | `git push origin main` |
-| Migration       | Render Shell  | `cd backend && npx prisma migrate deploy` |
+| Migration       | Kendi PC      | `cd backend` sonra `DATABASE_URL="postgresql://..." npx prisma migrate deploy` (URL = Render Environment’tan) |
 | RATE_LIMIT_MAX  | Render Env    | Key: `RATE_LIMIT_MAX`, Value: `800` |
 
 Bu üçünü yaptıktan sonra backend güncel olur, tablolar oluşur ve 429 riski azalır.
