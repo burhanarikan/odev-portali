@@ -92,8 +92,8 @@ export function AppShell({
         </div>
       </header>
       <div className="flex">
-        <aside className="hidden md:flex md:w-64 md:flex-col border-r border-gray-200 bg-white min-h-[calc(100vh-4rem)]">
-          <nav className="flex-1 px-2 py-4 space-y-1">
+        <aside className="hidden md:flex md:w-64 md:flex-col md:sticky md:top-0 md:self-start md:h-screen border-r border-gray-200 bg-white overflow-y-auto">
+          <nav className="flex-1 px-2 py-4 space-y-1 min-h-0">
             {filteredNav.map((item) => {
               const href = item.name === 'Ana Sayfa'
                 ? (role === 'STUDENT' ? '/dashboard/student' : '/dashboard/teacher')

@@ -123,8 +123,8 @@ export const Sidebar = () => {
   );
 
   return (
-    <div className="hidden md:flex md:w-64 md:flex-col">
-      <div className="flex flex-col flex-grow pt-5 bg-card overflow-y-auto border-r border-border">
+    <div className="hidden md:flex md:w-64 md:flex-col md:sticky md:top-16 md:self-start md:h-[calc(100vh-4rem)]">
+      <div className="flex flex-col flex-grow pt-5 bg-card overflow-y-auto border-r border-border min-h-0">
         <div className="flex items-center flex-shrink-0 px-4">
           <h2 className="text-lg font-semibold text-foreground">Menü</h2>
         </div>
