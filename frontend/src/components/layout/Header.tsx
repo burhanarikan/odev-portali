@@ -1,30 +1,19 @@
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
-import { useSidebarStore } from '@/store/sidebarStore';
 import { useLogout } from '@/hooks/useAuth';
-import { LogOut, User, Moon, Sun, Menu } from 'lucide-react';
+import { LogOut, User, Moon, Sun } from 'lucide-react';
 
 export const Header = () => {
   const { user } = useAuthStore();
   const logout = useLogout();
   const { effective, toggle } = useThemeStore();
-  const sidebarToggle = useSidebarStore((s) => s.toggle);
 
   return (
     <header className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm border-b border-border shadow-sm">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 lg:h-16">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={sidebarToggle}
-              className="shrink-0"
-              aria-label="Menüyü aç"
-            >
-              <Menu className="h-5 w-5 text-foreground" />
-            </Button>
             <h1 className="text-lg lg:text-xl font-bold text-foreground tracking-tight">
               Ödev Yönetim Sistemi
             </h1>
