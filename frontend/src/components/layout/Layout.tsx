@@ -27,14 +27,12 @@ export const Layout = ({ children }: LayoutProps) => {
         İçeriğe atla
       </a>
       <Header />
-      <div className="flex">
-        <Sidebar />
-        <main id="main-content" className="flex-1 min-w-0 p-6 lg:p-8" tabIndex={-1}>
-          <div className="max-w-7xl mx-auto">
-            {children ?? <Outlet />}
-          </div>
-        </main>
-      </div>
+      <Sidebar />
+      <main id="main-content" className="flex-1 min-w-0 p-6 lg:p-8" tabIndex={-1}>
+        <div className="max-w-7xl mx-auto">
+          {children ?? <Outlet />}
+        </div>
+      </main>
       {isStudent && (
         <ConsentModal open={consentModalOpen} onOpenChange={setConsentModalOpen} />
       )}

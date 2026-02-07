@@ -1,8 +1,10 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/store/authStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { APP_VERSION, APP_UPDATED_AT } from '@/config/version';
-import { LayoutDashboard, FileText, Users, BarChart3, Inbox, Settings, Award, ClipboardCheck, LogIn, Megaphone, BookOpen, MessageSquare, Clock, Library, AlertTriangle, Phone, CalendarClock, BookMarked } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, BarChart3, Inbox, Settings, Award, ClipboardCheck, LogIn, Megaphone, BookOpen, MessageSquare, Clock, Library, AlertTriangle, Phone, CalendarClock, BookMarked, X } from 'lucide-react';
+import { useEffect } from 'react';
 
 const navigation = [
   {
@@ -117,24 +119,53 @@ const navigation = [
 
 export const Sidebar = () => {
   const { user } = useAuthStore();
+  const { open, setOpen } = useSidebarStore();
+  const location = useLocation();
 
   const filteredNavigation = navigation.filter(item =>
     item.roles.includes(user?.role || '')
   );
 
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname, setOpen]);
+
   return (
-    <div className="hidden md:flex md:w-64 md:flex-col">
-      <div className="flex flex-col flex-grow pt-5 bg-card overflow-y-auto border-r border-border">
-        <div className="flex items-center flex-shrink-0 px-4">
+    <>
+      {/* Overlay: tıklanınca menüyü kapat */}
+      <button
+        type="button"
+        aria-label="Menüyü kapat"
+        onClick={() => setOpen(false)}
+        className={cn(
+          'fixed inset-0 z-40 bg-black/50 transition-opacity',
+          open ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
+      />
+      {/* Açılır panel */}
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col bg-card border-r border-border shadow-xl transition-transform duration-200 ease-out',
+          open ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        <div className="flex items-center justify-between flex-shrink-0 px-4 py-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">Menü</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setOpen(false)}
+            aria-label="Menüyü kapat"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        <div className="mt-8 flex-1 flex flex-col">
-          <nav className="flex-1 px-2 pb-4 space-y-1">
-            {filteredNavigation.map((item) => {
-              const href = item.name === 'Ana Sayfa'
-                ? (user?.role === 'STUDENT' ? '/student' : '/teacher')
-                : item.href;
-              return (
+        <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
+          {filteredNavigation.map((item) => {
+            const href = item.name === 'Ana Sayfa'
+              ? (user?.role === 'STUDENT' ? '/student' : '/teacher')
+              : item.href;
+            return (
               <NavLink
                 key={item.name}
                 to={href}
@@ -159,10 +190,9 @@ export const Sidebar = () => {
                   </>
                 )}
               </NavLink>
-              );
-            })}
-          </nav>
-        </div>
+            );
+          })}
+        </nav>
         <div className="flex-shrink-0 px-4 py-3 border-t border-border">
           <p className="text-xs text-muted-foreground">
             <span className="font-medium">{APP_VERSION}</span>
@@ -171,7 +201,7 @@ export const Sidebar = () => {
           </p>
           <p className="text-xs text-muted-foreground/80 mt-0.5">Güncelleme</p>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 };
