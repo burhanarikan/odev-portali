@@ -239,7 +239,17 @@ export class AnalyticsService {
     });
   }
 
-  async getTeacherPerformance(teacherId: string) {
+  async getTeacherPerformance(userIdOrTeacherId: string, directTeacherId?: string) {
+    let teacherId: string;
+    if (directTeacherId) {
+      teacherId = directTeacherId;
+    } else {
+      const teacher = await prisma.teacher.findUnique({
+        where: { userId: userIdOrTeacherId },
+      });
+      if (!teacher) throw new Error('Teacher not found');
+      teacherId = teacher.id;
+    }
     const assignments = await prisma.assignment.findMany({
       where: { createdBy: teacherId },
       include: {

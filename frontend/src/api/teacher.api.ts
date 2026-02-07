@@ -55,10 +55,11 @@ export const teacherApi = {
   },
 
   createAssignment: async (data: {
-    title: string;
+    homeworkId?: string;
+    title?: string;
     description?: string;
-    levelId: string;
-    weekNumber: number;
+    levelId?: string;
+    weekNumber?: number;
     startDate: string;
     dueDate: string;
     isDraft?: boolean;
@@ -107,10 +108,10 @@ export const teacherApi = {
     levelId?: string;
     weekNumber?: number;
   }) => {
-    const response = await api.post<{ similarAssignments: SimilarAssignment[] }>(
-      '/teacher/assignments/check-similarity',
-      data
-    );
+    const response = await api.post<{
+      similarAssignments: SimilarAssignment[];
+      warningMessage?: string | null;
+    }>('/teacher/assignments/check-similarity', data);
     return response.data;
   },
 

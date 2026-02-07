@@ -41,6 +41,7 @@ model Level {
   createdAt DateTime @default(now()) @map("created_at")
 
   classes     Class[]
+  homeworks   Homework[]
   assignments Assignment[]
 
   @@map("levels")
@@ -82,6 +83,7 @@ model Teacher {
   createdAt DateTime @default(now()) @map("created_at")
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  homeworks   Homework[]
   assignments Assignment[]
   groups      Group[]
   evaluations Evaluation[]
@@ -89,8 +91,28 @@ model Teacher {
   @@map("teachers")
 }
 
+/// Hocanın oluşturduğu taslak (başlık, açıklama, seviye, hafta). Aynı başlık farklı hocalarda ayrı kalır.
+model Homework {
+  id          String   @id @default(uuid())
+  teacherId   String   @map("teacher_id")
+  title       String
+  description String?  @db.Text
+  levelId     String   @map("level_id")
+  weekNumber  Int      @map("week_number")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  teacher     Teacher      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  level       Level        @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+
+  @@map("homeworks")
+}
+
+/// Öğrenciye atanan ödev (tarih, hedef sınıf/öğrenci). Taslaktan üretilebilir (homeworkId) veya doğrudan oluşturulabilir.
 model Assignment {
   id          String   @id @default(uuid())
+  homeworkId  String?  @map("homework_id")
   title       String
   description String?  @db.Text
   levelId     String   @map("level_id")
@@ -103,8 +125,9 @@ model Assignment {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  level   Level    @relation(fields: [levelId], references: [id], onDelete: Cascade)
-  teacher Teacher  @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  homework Homework?  @relation(fields: [homeworkId], references: [id], onDelete: SetNull)
+  level    Level      @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  teacher  Teacher    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 
   targets     AssignmentTarget[]
   groups      Group[]

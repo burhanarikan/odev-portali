@@ -19,20 +19,34 @@ const dateString = z.string().min(1).transform((s) => {
   return d.toISOString();
 });
 
-export const assignmentSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+/** Hocanın oluşturduğu taslak (Homework) alanları */
+export const homeworkSchema = z.object({
+  title: z.string().min(1, 'Başlık gerekli'),
   description: z.string().optional(),
-  levelId: z.string().uuid('Invalid level ID'),
+  levelId: z.string().uuid('Geçersiz seviye ID'),
   weekNumber: z.number().int().min(1).max(16),
+});
+
+const assignmentFields = z.object({
+  homeworkId: z.string().uuid().optional(),
+  title: z.string().min(1).optional(),
+  description: z.string().optional(),
+  levelId: z.string().uuid().optional(),
+  weekNumber: z.number().int().min(1).max(16).optional(),
   startDate: dateString,
   dueDate: dateString,
   isDraft: z.boolean().default(false),
   attachments: z.array(z.string()).default([]),
-  /** Sadece bu sınıfa atanır (isteğe bağlı) */
   classId: z.string().uuid().optional(),
-  /** Sadece bu öğrencilere atanır (classId yoksa kullanılır) */
   studentIds: z.array(z.string().uuid()).optional(),
 });
+
+export const assignmentSchema = assignmentFields.refine(
+  (d) => d.homeworkId || (d.title && d.levelId && d.weekNumber != null),
+  { message: 'homeworkId verin veya title, levelId ve weekNumber verin' }
+);
+
+export const assignmentUpdateSchema = assignmentFields.partial();
 
 export const submissionSchema = z.object({
   assignmentId: z.string().uuid(),
@@ -48,6 +62,7 @@ export const evaluationSchema = z.object({
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type HomeworkInput = z.infer<typeof homeworkSchema>;
 export type AssignmentInput = z.infer<typeof assignmentSchema>;
 export type SubmissionInput = z.infer<typeof submissionSchema>;
 export type EvaluationInput = z.infer<typeof evaluationSchema>;

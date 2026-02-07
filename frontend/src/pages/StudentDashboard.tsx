@@ -73,16 +73,21 @@ export const StudentDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4 items-baseline">
-            <span className="text-2xl font-bold text-gray-900">{totalSubmitted} teslim</span>
-            <span className="text-gray-600">/ toplam {totalDue} ödev</span>
+            <span className="text-2xl font-bold text-gray-900">{totalSubmitted} tamamlandı</span>
+            <span className="text-gray-600">/ toplam {totalDue} verilen ödev</span>
+            {totalDue > 0 && (
+              <Badge variant={totalSubmitted >= totalDue ? 'default' : totalSubmitted / totalDue >= 0.5 ? 'secondary' : 'destructive'}>
+                %{Math.round((totalSubmitted / totalDue) * 100)} tamamlama
+              </Badge>
+            )}
             {pendingCount > 0 && (
               <span className="text-amber-700 text-sm font-medium">
-                · {pendingCount} ödev bekliyor
+                · {pendingCount} yapılmadı
               </span>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Kur sonunda özet: Kaç ödev verildi, kaçını teslim ettiniz
+            Tamamlandı / yapılmadı durumu · Kur sonu özeti
           </p>
         </CardContent>
       </Card>

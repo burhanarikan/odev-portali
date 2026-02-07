@@ -36,6 +36,7 @@ export const CreateAssignment = () => {
   const { data: levels = [], isLoading: levelsLoading } = useLevels();
   const { data: studentsList = [] } = useTeacherStudents();
   const [liveSimilarAssignments, setLiveSimilarAssignments] = useState<SimilarAssignment[]>([]);
+  const [liveSimilarWarning, setLiveSimilarWarning] = useState<string | null>(null);
   const [liveSimilarLoading, setLiveSimilarLoading] = useState(false);
   type TargetType = 'level' | 'class' | 'students';
   const [targetType, setTargetType] = useState<TargetType>('level');
@@ -73,6 +74,7 @@ export const CreateAssignment = () => {
         })
         .then((res) => {
           setLiveSimilarAssignments(res.similarAssignments ?? []);
+          setLiveSimilarWarning(res.warningMessage ?? null);
         })
         .catch(() => setLiveSimilarAssignments([]))
         .finally(() => setLiveSimilarLoading(false));
@@ -213,7 +215,7 @@ export const CreateAssignment = () => {
                       ? 'Başlık ve açıklamadaki kelimelere göre kontrol ediliyor…'
                       : liveSimilarAssignments.length === 0
                         ? 'Başlık veya açıklama yazdıkça benzer ödevler burada listelenir.'
-                        : 'Aynı veya benzer kelimeler geçen mevcut ödevler. Bilgi amaçlı; isterseniz yine de oluşturabilirsiniz.'}
+                        : liveSimilarWarning || 'Aynı veya benzer kelimeler geçen mevcut ödevler. Aynı ödevi tekrar vermemek için başlık/açıklamayı gözden geçirin.'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">

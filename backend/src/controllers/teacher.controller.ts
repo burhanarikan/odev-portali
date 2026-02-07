@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { AssignmentService } from '../services/assignment.service';
 import { EvaluationService } from '../services/evaluation.service';
-import { assignmentSchema, evaluationSchema } from '../utils/validators';
+import { HomeworkService } from '../services/homework.service';
+import { assignmentSchema, assignmentUpdateSchema, evaluationSchema, homeworkSchema } from '../utils/validators';
 import { errorHandler, AppError } from '../middleware/errorHandler';
 import { prisma } from '../config/database';
 
 const assignmentService = new AssignmentService();
 const evaluationService = new EvaluationService();
+const homeworkService = new HomeworkService();
 
 export const createAssignment = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -44,7 +46,7 @@ export const getAssignmentById = async (req: Request, res: Response, next: NextF
 export const updateAssignment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const validatedData = assignmentSchema.partial().parse(req.body);
+    const validatedData = assignmentUpdateSchema.parse(req.body);
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     const assignment = await assignmentService.updateAssignment(id ?? '', validatedData, req.user.userId);
     res.json(assignment);
@@ -80,7 +82,11 @@ export const checkSimilarity = async (req: Request, res: Response, next: NextFun
       levelId,
       weekNumber ? parseInt(String(weekNumber), 10) : undefined
     );
-    res.json({ similarAssignments });
+    const warningMessage =
+      similarAssignments.length > 0
+        ? 'Benzer ödevler bulundu. Aynı ödevi tekrar vermemek için başlık veya açıklamayı gözden geçirin.'
+        : null;
+    res.json({ similarAssignments, warningMessage });
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
   }
@@ -90,9 +96,10 @@ export const getAssignmentsByWeek = async (req: Request, res: Response, next: Ne
   try {
     const { weekNumber } = req.params;
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
     const assignments = await assignmentService.getAssignmentsByWeek(
       parseInt(weekNumber ?? '0', 10),
-      req.user.userId
+      teacherUserId
     );
     res.json(assignments);
   } catch (error: unknown) {
@@ -145,9 +152,10 @@ export const getAssignmentsByLevel = async (req: Request, res: Response, next: N
   try {
     const { levelId } = req.params;
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
     const assignments = await assignmentService.getAssignmentsByLevel(
       levelId ?? '',
-      req.user.userId
+      teacherUserId
     );
     res.json(assignments);
   } catch (error: unknown) {
@@ -164,6 +172,59 @@ export const getLevels = async (_req: Request, res: Response, next: NextFunction
     res.json(levels);
   } catch (error: unknown) {
     errorHandler(error as AppError, _req, res, next);
+  }
+};
+
+// --- Homework (taslak) CRUD ---
+export const getHomeworks = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
+    const list = await homeworkService.getByTeacher(teacherUserId);
+    res.json(list);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const createHomework = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validated = homeworkSchema.parse(req.body);
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const homework = await homeworkService.create(validated, req.user.userId);
+    res.status(201).json(homework);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const getHomeworkById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const homework = await homeworkService.getById(req.params.id ?? '');
+    res.json(homework);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const updateHomework = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validated = homeworkSchema.partial().parse(req.body);
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const homework = await homeworkService.update(req.params.id ?? '', validated, req.user.userId);
+    res.json(homework);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const deleteHomework = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    await homeworkService.delete(req.params.id ?? '', req.user.userId);
+    res.status(204).send();
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
   }
 };
 

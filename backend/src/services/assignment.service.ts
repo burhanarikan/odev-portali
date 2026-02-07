@@ -16,25 +16,63 @@ export class AssignmentService {
       throw createError('Teacher not found', 404);
     }
 
-    // Aynı öğretmen + aynı seviye + aynı başlık + aynı hafta = tam tekrar (engelle). Farklı hocalar veya farklı hafta aynı başlığı kullanabilir.
-    const existing = await prisma.assignment.findFirst({
-      where: {
-        createdBy: teacher.id,
-        levelId: data.levelId,
-        title: data.title.trim(),
-        weekNumber: data.weekNumber,
-      },
-    });
-    if (existing) {
-      throw createError('Bu seviye ve haftada aynı başlıkta bir ödeviniz zaten var. Başlığı değiştirin veya farklı hafta seçin.', 409);
+    const levelId = data.levelId!;
+    const weekNumber = data.weekNumber!;
+    const title = (data.title ?? '').trim();
+    const description = data.description ?? '';
+
+    let homework: { id: string };
+
+    if (data.homeworkId) {
+      const existingHomework = await prisma.homework.findFirst({
+        where: { id: data.homeworkId, teacherId: teacher.id },
+      });
+      if (!existingHomework) {
+        throw createError('Taslak bulunamadı veya bu taslağa erişim yetkiniz yok.', 404);
+      }
+      homework = existingHomework;
+    } else {
+      if (!title || !levelId || weekNumber == null) {
+        throw createError('Yeni ödev için title, levelId ve weekNumber gerekli.', 400);
+      }
+      const existing = await prisma.assignment.findFirst({
+        where: {
+          createdBy: teacher.id,
+          levelId,
+          title,
+          weekNumber,
+        },
+      });
+      if (existing) {
+        throw createError('Bu seviye ve haftada aynı başlıkta bir ödeviniz zaten var. Başlığı değiştirin veya farklı hafta seçin.', 409);
+      }
+      const created = await prisma.homework.create({
+        data: {
+          teacherId: teacher.id,
+          title,
+          description: description || null,
+          levelId,
+          weekNumber,
+        },
+      });
+      homework = created;
     }
+
+    const homeworkRecord = await prisma.homework.findUnique({
+      where: { id: homework.id },
+    });
+    const assignTitle = homeworkRecord?.title ?? title;
+    const assignDesc = homeworkRecord?.description ?? description;
+    const assignLevelId = homeworkRecord?.levelId ?? levelId;
+    const assignWeek = homeworkRecord?.weekNumber ?? weekNumber;
 
     const assignment = await prisma.assignment.create({
       data: {
-        title: data.title,
-        description: data.description || '',
-        levelId: data.levelId,
-        weekNumber: data.weekNumber,
+        homeworkId: homework.id,
+        title: assignTitle,
+        description: assignDesc,
+        levelId: assignLevelId,
+        weekNumber: assignWeek,
         startDate: new Date(data.startDate),
         dueDate: new Date(data.dueDate),
         createdBy: teacher.id,
@@ -42,6 +80,7 @@ export class AssignmentService {
         isDraft: data.isDraft || false,
       },
       include: {
+        homework: true,
         level: true,
         teacher: {
           include: {
@@ -118,6 +157,7 @@ export class AssignmentService {
     return prisma.assignment.findMany({
       where,
       include: {
+        homework: true,
         level: true,
         teacher: {
           include: {
@@ -141,6 +181,7 @@ export class AssignmentService {
     const assignment = await prisma.assignment.findUnique({
       where: { id },
       include: {
+        homework: true,
         level: true,
         teacher: {
           include: {

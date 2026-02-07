@@ -40,6 +40,7 @@ export interface Class {
 
 export interface Assignment {
   id: string;
+  homeworkId?: string | null;
   title: string;
   description?: string;
   levelId: string;
@@ -56,6 +57,11 @@ export interface Assignment {
     id: string;
     user: User;
   };
+  homework?: {
+    id: string;
+    title: string;
+    teacherId: string;
+  } | null;
   targets?: AssignmentTarget[];
   submissions?: Submission[];
   _count?: {

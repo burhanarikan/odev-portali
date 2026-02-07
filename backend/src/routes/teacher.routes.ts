@@ -17,6 +17,11 @@ import {
   addStudentToGroup,
   removeStudentFromGroup,
   getGroups,
+  getHomeworks,
+  createHomework,
+  getHomeworkById,
+  updateHomework,
+  deleteHomework,
 } from '../controllers/teacher.controller';
 import { authenticate, authorize } from '../middleware/auth';
 
@@ -26,6 +31,11 @@ router.use(authenticate);
 router.use(authorize(['TEACHER', 'ADMIN']));
 
 router.get('/levels', getLevels);
+router.get('/homeworks', getHomeworks);
+router.post('/homeworks', createHomework);
+router.get('/homeworks/:id', getHomeworkById);
+router.put('/homeworks/:id', updateHomework);
+router.delete('/homeworks/:id', deleteHomework);
 router.get('/students', getStudents);
 router.get('/students/:id', getStudentById);
 router.get('/submissions', getSubmissions);

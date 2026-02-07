@@ -187,16 +187,16 @@ export const AnalyticsPage = () => {
         </Card>
       </div>
 
-      {/* Yönetim: Öğrenci takibi – kim kaç ödev teslim etmiş */}
+      {/* Yönetim: Kur sonu raporu – toplam verilen / tamamlanan oranı */}
       {isAdmin && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <ClipboardList className="h-5 w-5" />
-              <span>Öğrenci takibi</span>
+              <span>Kur sonu raporu – Öğrenci takibi</span>
             </CardTitle>
             <CardDescription>
-              Hangi öğrenci kaç ödev teslim etmiş; düzenli yapan / yapmayan takibi
+              Her öğrenci için toplam verilen ödev / tamamlanan ödev oranı (yüzdelik). Hangi öğrenci kaç ödev teslim etmiş; düzenli yapan / yapmayan takibi.
             </CardDescription>
           </CardHeader>
           <CardContent>
