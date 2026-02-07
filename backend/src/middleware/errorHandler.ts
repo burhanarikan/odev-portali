@@ -6,8 +6,23 @@ export interface AppError extends Error {
   isOperational?: boolean;
 }
 
+/** Prisma hata kodları -> HTTP status (Render/Vercel loglarında gerçek hatayı görmek için 500'lerde mesaj loglanır) */
+function statusFromPrismaCode(code: string): number | null {
+  switch (code) {
+    case 'P2025': return 404; // Kayıt bulunamadı
+    case 'P2002': return 409; // Unique constraint
+    case 'P2003': return 400; // Foreign key
+    case 'P1001':
+    case 'P1002':
+    case 'P1017': return 503; // DB bağlantı hatası
+    case 'P1014':
+    case 'P2021': return 503; // Tablo/relation yok (migration çalıştırılmamış olabilir)
+    default: return null;
+  }
+}
+
 export const errorHandler = (
-  err: AppError | ZodError,
+  err: AppError | ZodError & { code?: string },
   req: Request,
   res: Response,
   _next: NextFunction
@@ -20,12 +35,22 @@ export const errorHandler = (
     const zodErr = err as ZodError;
     message = zodErr.errors.map((e) => e.message).join('; ') || 'Validation error';
   } else {
-    statusCode = (err as AppError).statusCode || 500;
-    message = err.message || 'Internal Server Error';
+    const prismaCode = typeof (err as { code?: string }).code === 'string' ? (err as { code: string }).code : null;
+    const prismaStatus = prismaCode ? statusFromPrismaCode(prismaCode) : null;
+    if (prismaStatus != null) {
+      statusCode = prismaStatus;
+      message = (err as Error).message || 'Internal Server Error';
+    } else {
+      statusCode = (err as AppError).statusCode ?? 500;
+      message = (err as Error).message || 'Internal Server Error';
+    }
   }
 
   console.error(`Error ${statusCode}: ${message}`);
   if (err.stack) console.error(err.stack);
+  if (statusCode === 500 && process.env.NODE_ENV === 'production') {
+    console.error('[500] Detay (Render loglarında kontrol edin):', (err as Error).message);
+  }
 
   // #region agent log
   if (statusCode === 500) {

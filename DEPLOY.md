@@ -53,6 +53,13 @@ DATABASE_URL="postgresql://..." npx prisma db seed
    - `PORT` = Render otomatik atar, kodda `process.env.PORT || 5050` kullanın
 5. **Create Web Service**. Backend URL örn: `https://odev-portali-backend.onrender.com`
 
+6. **Önemli — Migration:** Backend ilk kez çalıştıktan sonra, canlı veritabanında tabloların oluşması için migration’ları bir kez çalıştırın. Aksi halde `/api/student/assignments` ve `/api/student/consent` 500 döner (tablo bulunamadı). Lokal veya CI’da:
+   ```bash
+   cd backend
+   DATABASE_URL="postgresql://...canlı-connection-string..." npx prisma migrate deploy
+   ```
+   Render’da **Shell** (Dashboard → Service → Shell) açıp aynı komutu `DATABASE_URL` zaten ortamda olduğu için `npx prisma migrate deploy` çalıştırabilirsiniz.
+
 ### CORS
 
 Backend’de frontend’in canlı URL’ine izin verin. `backend/src/app.ts` içinde:

@@ -18,6 +18,10 @@ export const getAssignments = async (req: Request, res: Response, next: NextFunc
     const assignments = await studentService.getStudentAssignments(req.user.userId);
     res.json(assignments);
   } catch (error: unknown) {
+    const err = error as AppError & { code?: string };
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[getAssignments]', err.message, err.code);
+    }
     errorHandler(error as AppError, req, res, next);
   }
 };
@@ -86,6 +90,11 @@ export const getConsent = async (req: Request, res: Response, next: NextFunction
     const consent = await studentService.getConsent(req.user.userId);
     res.json(consent);
   } catch (error: unknown) {
+    const err = error as AppError & { code?: string };
+    if (['P1014', 'P2021'].includes(err.code || '') || (err.message && /relation|table|does not exist/i.test(err.message))) {
+      res.json({ accepted: false });
+      return;
+    }
     errorHandler(error as AppError, req, res, next);
   }
 };
