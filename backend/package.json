@@ -10,6 +10,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma generate && prisma migrate deploy",
     "db:backfill-homework": "tsx prisma/backfill-homework.ts",
     "db:studio": "prisma studio",
     "lint": "eslint src --ext .ts",

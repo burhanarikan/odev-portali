@@ -18,6 +18,10 @@ import { AnnouncementsPage } from '@/pages/AnnouncementsPage';
 import { PortfolioPage } from '@/pages/PortfolioPage';
 import { StudentPortfolioPage } from '@/pages/StudentPortfolioPage';
 import { PeerReviewPage } from '@/pages/PeerReviewPage';
+import { TimelinePage } from '@/pages/TimelinePage';
+import { ErrorBankPage } from '@/pages/ErrorBankPage';
+import { TeacherResourcesPage } from '@/pages/TeacherResourcesPage';
+import { InterventionPage } from '@/pages/InterventionPage';
 import { NotFound } from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -161,6 +165,38 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<PeerReviewPage />} />
+        </Route>
+
+        <Route path="/timeline" element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<TimelinePage />} />
+        </Route>
+
+        <Route path="/error-bank" element={
+          <ProtectedRoute allowedRole="STUDENT">
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<ErrorBankPage />} />
+        </Route>
+
+        <Route path="/teacher-resources" element={
+          <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<TeacherResourcesPage />} />
+        </Route>
+
+        <Route path="/intervention" element={
+          <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<InterventionPage />} />
         </Route>
 
         <Route path="/settings" element={

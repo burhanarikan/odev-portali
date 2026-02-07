@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import type { Prisma } from '@prisma/client';
 import { EvaluationInput } from '../utils/validators';
 import { createError } from '../middleware/errorHandler';
 
@@ -40,13 +41,15 @@ export class EvaluationService {
         score: payload.score,
         feedback: payload.feedback,
         accepted: payload.accepted,
-        annotationData: payload.annotationData ?? undefined,
+        annotationData: (payload.annotationData ?? undefined) as Prisma.InputJsonValue | undefined,
       },
       update: {
         ...(payload.score !== undefined && { score: payload.score }),
         ...(payload.feedback !== undefined && { feedback: payload.feedback }),
         accepted: payload.accepted,
-        ...(payload.annotationData !== undefined && { annotationData: payload.annotationData }),
+        ...(payload.annotationData !== undefined && {
+          annotationData: payload.annotationData as Prisma.InputJsonValue,
+        }),
       },
       include: {
         submission: {

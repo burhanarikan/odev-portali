@@ -54,9 +54,8 @@ export function PdfAnnotator({
 }: PdfAnnotatorProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [numPages, setNumPages] = useState(0);
   const [pageCanvases, setPageCanvases] = useState<HTMLCanvasElement[]>([]);
-  const [scale, setScale] = useState(1.5);
+  const scale = 1.5;
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const displayCanvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
@@ -157,7 +156,6 @@ export function PdfAnnotator({
         const pdf = await getDocument({ url: fileUrl }).promise;
         if (cancelled) return;
         const n = pdf.numPages;
-        setNumPages(n);
         const canvases: HTMLCanvasElement[] = [];
         const dims: { w: number; h: number }[] = [];
 
@@ -173,7 +171,7 @@ export function PdfAnnotator({
           if (ctx) {
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, viewport.width, viewport.height);
-            await page.render({ canvasContext: ctx, viewport }).promise;
+            await page.render({ canvasContext: ctx, viewport, canvas }).promise;
           }
           canvases.push(canvas);
         }

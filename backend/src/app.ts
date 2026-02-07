@@ -13,6 +13,10 @@ import uploadRoutes from './routes/upload.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import announcementRoutes from './routes/announcement.routes';
 import peerReviewRoutes from './routes/peerReview.routes';
+import timelineRoutes from './routes/timeline.routes';
+import teacherResourceRoutes from './routes/teacherResource.routes';
+import errorBankRoutes from './routes/errorBank.routes';
+import interventionRoutes from './routes/intervention.routes';
 
 const app = express();
 
@@ -51,6 +55,10 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/peer-review', peerReviewRoutes);
+app.use('/api/timeline', timelineRoutes);
+app.use('/api/teacher-resources', teacherResourceRoutes);
+app.use('/api/error-bank', errorBankRoutes);
+app.use('/api/intervention', interventionRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

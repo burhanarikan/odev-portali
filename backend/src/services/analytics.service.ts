@@ -419,4 +419,66 @@ export class AnalyticsService {
       },
     };
   }
+
+  /** Sınıf rekabeti: ödev tamamlama + yoklama oranına göre sıralı sınıf listesi. */
+  async getClassLeaderboard() {
+    const classes = await prisma.class.findMany({
+      include: {
+        level: { select: { name: true } },
+        students: { include: { submissions: true, attendanceRecords: true } },
+      },
+    });
+    const now = new Date();
+    const result: Array<{
+      classId: string;
+      className: string;
+      levelName: string;
+      studentCount: number;
+      completionRate: number;
+      attendanceRate: number;
+      score: number;
+    }> = [];
+
+    for (const c of classes) {
+      const levelId = c.levelId;
+      const studentIds = c.students.map((s) => s.id);
+      const totalAssignments = await prisma.assignment.count({
+        where: {
+          levelId,
+          isDraft: false,
+          dueDate: { lt: now },
+          OR: [
+            { targets: { none: {} } },
+            { targets: { some: { classId: c.id } } },
+            { targets: { some: { studentId: { in: studentIds } } } },
+          ],
+        },
+      });
+      const totalSubmissions = c.students.reduce(
+        (sum, s) => sum + s.submissions.filter((sub) => sub.studentId === s.id).length,
+        0
+      );
+      const completionRate = totalAssignments > 0 ? (totalSubmissions / (totalAssignments * Math.max(c.students.length, 1))) * 100 : 0;
+
+      const totalSessions = await prisma.attendanceSession.count({
+        where: { classId: c.id },
+      });
+      const totalPossible = totalSessions * Math.max(c.students.length, 1);
+      const attended = c.students.reduce((sum, s) => sum + s.attendanceRecords.length, 0);
+      const attendanceRate = totalPossible > 0 ? (attended / totalPossible) * 100 : 0;
+
+      const score = Math.round(completionRate * 0.6 + attendanceRate * 0.4);
+      result.push({
+        classId: c.id,
+        className: c.name,
+        levelName: c.level?.name ?? '—',
+        studentCount: c.students.length,
+        completionRate: Math.round(completionRate * 100) / 100,
+        attendanceRate: Math.round(attendanceRate * 100) / 100,
+        score,
+      });
+    }
+    result.sort((a, b) => b.score - a.score);
+    return result;
+  }
 }

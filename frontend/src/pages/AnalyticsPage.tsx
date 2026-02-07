@@ -16,6 +16,7 @@ import {
   ClipboardList,
   Briefcase,
   Award,
+  Trophy,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
@@ -46,6 +47,11 @@ export const AnalyticsPage = () => {
   const { data: fairnessLeaderboard = [], isLoading: fairnessLoading } = useQuery({
     queryKey: ['peer-review', 'fairness-leaderboard'],
     queryFn: () => peerReviewApi.getFairnessLeaderboard(10),
+    enabled: !!user && (user.role === 'TEACHER' || user.role === 'ADMIN'),
+  });
+  const { data: classLeaderboard = [], isLoading: classLeaderboardLoading } = useQuery({
+    queryKey: ['analytics', 'class-leaderboard'],
+    queryFn: analyticsApi.getClassLeaderboard,
     enabled: !!user && (user.role === 'TEACHER' || user.role === 'ADMIN'),
   });
 
@@ -410,6 +416,61 @@ export const AnalyticsPage = () => {
                         <td className="py-2 text-right">{row.reviewCount}</td>
                         <td className="py-2 text-right">
                           <Badge variant="outline">{row.averageDeviation.toFixed(2)}</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sınıf rekabeti – En başarılı sınıflar */}
+      {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Trophy className="h-5 w-5" />
+              <span>Dinamik Sınıf Rekabeti (En Başarılı Sınıflar)</span>
+            </CardTitle>
+            <CardDescription>
+              Ödev tamamlama ve yoklama oranına göre sınıf puanı. Kantin/portal ekranında yayınlanabilir.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {classLeaderboardLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : classLeaderboard.length === 0 ? (
+              <p className="text-sm text-gray-500">Henüz veri yok.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 font-medium">#</th>
+                      <th className="text-left py-2 font-medium">Sınıf</th>
+                      <th className="text-left py-2 font-medium">Seviye</th>
+                      <th className="text-right py-2 font-medium">Öğrenci</th>
+                      <th className="text-right py-2 font-medium">Tamamlama %</th>
+                      <th className="text-right py-2 font-medium">Yoklama %</th>
+                      <th className="text-right py-2 font-medium">Puan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {classLeaderboard.map((row, index) => (
+                      <tr key={row.classId} className="border-b hover:bg-gray-50">
+                        <td className="py-2 font-medium">{index + 1}</td>
+                        <td className="py-2">{row.className}</td>
+                        <td className="py-2">{row.levelName}</td>
+                        <td className="py-2 text-right">{row.studentCount}</td>
+                        <td className="py-2 text-right">{row.completionRate.toFixed(1)}</td>
+                        <td className="py-2 text-right">{row.attendanceRate.toFixed(1)}</td>
+                        <td className="py-2 text-right">
+                          <Badge variant={index < 3 ? 'default' : 'secondary'}>{row.score}</Badge>
                         </td>
                       </tr>
                     ))}

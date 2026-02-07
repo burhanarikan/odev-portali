@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/store/authStore';
 import { APP_VERSION, APP_UPDATED_AT } from '@/config/version';
-import { LayoutDashboard, FileText, Users, BarChart3, Inbox, Settings, Award, ClipboardCheck, LogIn, Megaphone, BookOpen, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, BarChart3, Inbox, Settings, Award, ClipboardCheck, LogIn, Megaphone, BookOpen, MessageSquare, Clock, Library, AlertTriangle, Phone } from 'lucide-react';
 
 const navigation = [
   {
@@ -36,6 +36,18 @@ const navigation = [
     roles: ['STUDENT'],
   },
   {
+    name: 'Zaman Tüneli',
+    href: '/timeline',
+    icon: Clock,
+    roles: ['STUDENT', 'TEACHER', 'ADMIN'],
+  },
+  {
+    name: 'Hata Bankası',
+    href: '/error-bank',
+    icon: AlertTriangle,
+    roles: ['STUDENT'],
+  },
+  {
     name: 'Duyurular',
     href: '/announcements',
     icon: Megaphone,
@@ -57,6 +69,18 @@ const navigation = [
     name: 'Teslimler',
     href: '/submissions',
     icon: Inbox,
+    roles: ['TEACHER', 'ADMIN'],
+  },
+  {
+    name: 'Ders Havuzu',
+    href: '/teacher-resources',
+    icon: Library,
+    roles: ['TEACHER', 'ADMIN'],
+  },
+  {
+    name: 'Müdahale Takvimi',
+    href: '/intervention',
+    icon: Phone,
     roles: ['TEACHER', 'ADMIN'],
   },
   {

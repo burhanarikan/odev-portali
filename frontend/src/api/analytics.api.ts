@@ -43,7 +43,23 @@ export const analyticsApi = {
     const response = await api.get<StudentPortfolio>(`/analytics/portfolio/${studentId}`);
     return response.data;
   },
+
+  /** Sınıf rekabeti: ödev + yoklama puanına göre sıralı sınıf listesi */
+  getClassLeaderboard: async () => {
+    const response = await api.get<ClassLeaderboardItem[]>('/analytics/class-leaderboard');
+    return response.data;
+  },
 };
+
+export interface ClassLeaderboardItem {
+  classId: string;
+  className: string;
+  levelName: string;
+  studentCount: number;
+  completionRate: number;
+  attendanceRate: number;
+  score: number;
+}
 
 export interface TeacherWorkloadItem {
   teacherId: string;

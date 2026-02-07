@@ -78,3 +78,13 @@ export const getStudentPortfolio = async (req: Request, res: Response, next: Nex
     errorHandler(error as AppError, req, res, next);
   }
 };
+
+/** Sınıf rekabeti liderlik tablosu (ödev + yoklama puanı) */
+export const getClassLeaderboard = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const list = await analyticsService.getClassLeaderboard();
+    res.json(list);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, _req, res, next);
+  }
+};

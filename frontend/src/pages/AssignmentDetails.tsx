@@ -22,12 +22,9 @@ import { Loader2 } from 'lucide-react';
 import { SubmissionForm } from '@/components/student/SubmissionForm';
 import { AudioPlayer } from '@/components/ui/audio-player';
 import { PdfAnnotator, type AnnotationData } from '@/components/pdf/PdfAnnotator';
-import {
-  Dialog as PdfDialog,
-  DialogContent as PdfDialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { errorBankApi } from '@/api/errorBank.api';
+import { useToast } from '@/components/ui/use-toast';
+import { Dialog as PdfDialog, DialogContent as PdfDialogContent } from '@/components/ui/dialog';
 
 export const AssignmentDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -275,7 +272,7 @@ export const AssignmentDetails = () => {
                           <FileText className="h-4 w-4" /> Dosyayı aç
                         </a>
                         {isPdfUrl((submission as { fileUrl: string }).fileUrl) &&
-                         (submission as { evaluation?: { annotationData?: unknown } }).evaluation?.annotationData && (
+                         (submission as { evaluation?: { annotationData?: AnnotationData } }).evaluation?.annotationData != null && (
                           <div className="mt-3">
                             <h4 className="font-medium text-gray-900 mb-2">Hocanın işaretlemeleri</h4>
                             <PdfAnnotator
@@ -376,7 +373,7 @@ type SubmissionItem = {
   audioUrl?: string | null;
   fileUrl?: string | null;
   evaluation?: { score?: number; feedback?: string; accepted: boolean; annotationData?: unknown } | null;
-  student?: { user?: { name: string } } | null;
+  student?: { id: string; user?: { name: string } } | null;
 };
 
 function SubmissionListCard({
@@ -482,6 +479,7 @@ function SubmissionEvaluationForm({
   onSubmit: (data: { score?: number; feedback?: string; accepted: boolean; annotationData?: unknown }) => Promise<void>;
   isSubmitting: boolean;
 }) {
+  const { toast } = useToast();
   const [score, setScore] = useState<string>(
     submission.evaluation?.score != null ? String(submission.evaluation.score) : ''
   );
@@ -491,6 +489,8 @@ function SubmissionEvaluationForm({
     submission.evaluation?.annotationData as AnnotationData | undefined
   );
   const [pdfAnnotatorOpen, setPdfAnnotatorOpen] = useState(false);
+  const [errorBankText, setErrorBankText] = useState('');
+  const [errorBankAdding, setErrorBankAdding] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -553,9 +553,7 @@ function SubmissionEvaluationForm({
       {isPdf && pdfAnnotatorOpen && (
         <PdfDialog open={pdfAnnotatorOpen} onOpenChange={setPdfAnnotatorOpen}>
           <PdfDialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>PDF üzerinde işaretleme</DialogTitle>
-            </DialogHeader>
+            <div className="font-semibold text-lg mb-4">PDF üzerinde işaretleme</div>
             <PdfAnnotator
               fileUrl={submissionFileUrl}
               initialData={annotationData ?? (submission.evaluation?.annotationData as AnnotationData | undefined) ?? undefined}
@@ -568,6 +566,49 @@ function SubmissionEvaluationForm({
             />
           </PdfDialogContent>
         </PdfDialog>
+      )}
+      {submission.student?.id && (
+        <div className="space-y-2 p-3 bg-amber-50 rounded-lg border border-amber-100">
+          <Label className="text-xs text-amber-800">Hata Bankasına Ekle</Label>
+          <p className="text-xs text-amber-700">Öğrencinin dikkat etmesi gereken spesifik hatayı yazın (örn: he/she/it için -s takısı unutuldu)</p>
+          <div className="flex gap-2">
+            <Input
+              value={errorBankText}
+              onChange={(e) => setErrorBankText(e.target.value)}
+              placeholder="Hata açıklaması..."
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!errorBankText.trim() || errorBankAdding}
+              onClick={async () => {
+                if (!errorBankText.trim() || !submission.student?.id) return;
+                setErrorBankAdding(true);
+                try {
+                  await errorBankApi.addError({
+                    studentId: submission.student.id,
+                    errorText: errorBankText.trim(),
+                    submissionId: submission.id,
+                  });
+                  toast({ title: 'Hata bankasına eklendi.' });
+                  setErrorBankText('');
+                } catch (e: unknown) {
+                  toast({
+                    title: 'Eklenemedi',
+                    description: (e as { response?: { data?: { error?: string } } })?.response?.data?.error,
+                    variant: 'destructive',
+                  });
+                } finally {
+                  setErrorBankAdding(false);
+                }
+              }}
+            >
+              {errorBankAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ekle'}
+            </Button>
+          </div>
+        </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
