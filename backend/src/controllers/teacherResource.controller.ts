@@ -16,7 +16,7 @@ export const listResources = async (req: Request, res: Response, next: NextFunct
 
 export const createResource = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const body = req.body as { title?: string; description?: string; fileUrl?: string; linkUrl?: string; levelId?: string };
     if (!body.title?.trim()) return res.status(400).json({ error: 'title gerekli' });
     const resource = await service.create(req.user.userId, {
@@ -34,7 +34,7 @@ export const createResource = async (req: Request, res: Response, next: NextFunc
 
 export const deleteResource = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     await service.delete(req.params.id ?? '', req.user.userId);
     res.status(204).send();
   } catch (e) {

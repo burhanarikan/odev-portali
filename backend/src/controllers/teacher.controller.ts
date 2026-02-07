@@ -16,7 +16,7 @@ const makeUpService = new MakeUpService();
 export const createAssignment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validatedData = assignmentSchema.parse(req.body);
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const result = await assignmentService.createAssignment(validatedData, req.user.userId);
     res.status(201).json(result);
   } catch (error: unknown) {
@@ -26,22 +26,19 @@ export const createAssignment = async (req: Request, res: Response, next: NextFu
 
 export const getAssignments = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('[Teacher] getAssignments start', { role: req.user?.role, userId: req.user?.userId ? '***' : undefined });
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     // Yönetici tüm ödevleri görür (kim ne vermiş takibi)
     const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
     const assignments = await assignmentService.getAssignments(teacherUserId, req.user.role);
     sendJson(res, assignments);
   } catch (error: unknown) {
-    const e = error as Error;
-    console.error('[Teacher] getAssignments error:', e?.message ?? e, (error as { code?: string })?.code);
     errorHandler(error as AppError, req, res, next);
   }
 };
 
 export const getAssignmentById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const { id } = req.params;
     const assignment = await assignmentService.getAssignmentById(id ?? '', req.user.userId, req.user.role);
     res.json(assignment);
@@ -54,7 +51,7 @@ export const updateAssignment = async (req: Request, res: Response, next: NextFu
   try {
     const { id } = req.params;
     const validatedData = assignmentUpdateSchema.parse(req.body);
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const assignment = await assignmentService.updateAssignment(id ?? '', validatedData, req.user.userId);
     res.json(assignment);
   } catch (error: unknown) {
@@ -65,7 +62,7 @@ export const updateAssignment = async (req: Request, res: Response, next: NextFu
 export const deleteAssignment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     await assignmentService.deleteAssignment(id ?? '', req.user.userId);
     res.status(204).send();
   } catch (error: unknown) {
@@ -117,7 +114,7 @@ export const getAssignmentsByWeek = async (req: Request, res: Response, next: Ne
 export const createGroup = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { assignmentId, name } = req.body as { assignmentId: string; name: string };
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const group = await assignmentService.createGroup(assignmentId, name, req.user.userId);
     res.status(201).json(group);
   } catch (error: unknown) {
@@ -185,7 +182,7 @@ export const getLevels = async (_req: Request, res: Response, next: NextFunction
 // --- Homework (taslak) CRUD ---
 export const getHomeworks = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
     const list = await homeworkService.getByTeacher(teacherUserId);
     res.json(list);
@@ -197,7 +194,7 @@ export const getHomeworks = async (req: Request, res: Response, next: NextFuncti
 export const createHomework = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validated = homeworkSchema.parse(req.body);
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const homework = await homeworkService.create(validated, req.user.userId);
     res.status(201).json(homework);
   } catch (error: unknown) {
@@ -207,7 +204,7 @@ export const createHomework = async (req: Request, res: Response, next: NextFunc
 
 export const getHomeworkById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const homework = await homeworkService.getById(req.params.id ?? '', req.user.userId, req.user.role);
     res.json(homework);
   } catch (error: unknown) {
@@ -218,7 +215,7 @@ export const getHomeworkById = async (req: Request, res: Response, next: NextFun
 export const updateHomework = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validated = homeworkSchema.partial().parse(req.body);
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const homework = await homeworkService.update(req.params.id ?? '', validated, req.user.userId);
     res.json(homework);
   } catch (error: unknown) {
@@ -228,7 +225,7 @@ export const updateHomework = async (req: Request, res: Response, next: NextFunc
 
 export const deleteHomework = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     await homeworkService.delete(req.params.id ?? '', req.user.userId);
     res.status(204).send();
   } catch (error: unknown) {
@@ -238,17 +235,11 @@ export const deleteHomework = async (req: Request, res: Response, next: NextFunc
 
 export const getSubmissions = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('[Teacher] getSubmissions start', { role: req.user?.role });
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-    // ADMIN'ın Teacher kaydı yok; boş dizi dön
-    if (req.user.role === 'ADMIN') {
-      return sendJson(res, []);
-    }
+    if (req.user.role === 'ADMIN') return sendJson(res, []);
     const submissions = await assignmentService.getSubmissionsForTeacher(req.user.userId);
     sendJson(res, submissions);
   } catch (error: unknown) {
-    const e = error as Error;
-    console.error('[Teacher] getSubmissions error:', e?.message ?? e, (error as { code?: string })?.code);
     errorHandler(error as AppError, req, res, next);
   }
 };
@@ -325,7 +316,7 @@ export const submitEvaluation = async (req: Request, res: Response, next: NextFu
   try {
     const { submissionId } = req.params;
     const validated = evaluationSchema.parse(req.body);
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const result = await evaluationService.submitEvaluation(submissionId ?? '', validated, req.user.userId);
     res.json(result);
   } catch (error: unknown) {
@@ -342,7 +333,7 @@ export const createMakeUpSlot = async (req: Request, res: Response, next: NextFu
       title?: string;
       maxStudents?: number;
     };
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     if (!classId || !slotStart || !slotEnd) {
       return res.status(400).json({ error: 'classId, slotStart ve slotEnd gerekli' });
     }
@@ -362,7 +353,7 @@ export const createMakeUpSlot = async (req: Request, res: Response, next: NextFu
 
 export const getMyMakeUpSlots = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const slots = await makeUpService.getSlotsForTeacher(req.user.userId);
     res.json(slots);
   } catch (error: unknown) {

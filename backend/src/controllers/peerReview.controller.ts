@@ -7,7 +7,7 @@ const peerReviewService = new PeerReviewService();
 
 export const getSubmissionsToReview = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const assignmentId = req.params.assignmentId ?? '';
     const list = await peerReviewService.getSubmissionsToReview(assignmentId, req.user.userId);
     res.json(list);
@@ -18,7 +18,7 @@ export const getSubmissionsToReview = async (req: Request, res: Response, next: 
 
 export const submitPeerReview = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const body = peerReviewSchema.parse(req.body);
     const review = await peerReviewService.submitPeerReview(
       body.submissionId,
@@ -37,7 +37,7 @@ export const submitPeerReview = async (req: Request, res: Response, next: NextFu
 
 export const getPeerReviewsReceived = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const submissionId = req.params.submissionId ?? '';
     const list = await peerReviewService.getPeerReviewsReceived(
       submissionId,
@@ -52,7 +52,7 @@ export const getPeerReviewsReceived = async (req: Request, res: Response, next: 
 
 export const getMyReceivedPeerReviews = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const list = await peerReviewService.getMyReceivedPeerReviews(req.user.userId);
     res.json(list);
   } catch (e) {
@@ -62,7 +62,7 @@ export const getMyReceivedPeerReviews = async (req: Request, res: Response, next
 
 export const getMyPeerReviews = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const list = await peerReviewService.getMyPeerReviews(req.user.userId);
     res.json(list);
   } catch (e) {

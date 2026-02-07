@@ -6,7 +6,7 @@ const attendanceService = new AttendanceService();
 
 export const startSession = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const { classId, durationMinutes, latitude, longitude, topic, resourceLinks } = req.body as {
       classId: string;
       durationMinutes?: number;
@@ -33,7 +33,7 @@ export const startSession = async (req: Request, res: Response, next: NextFuncti
 
 export const joinSession = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const { code, latitude, longitude } = req.body as {
       code: string;
       latitude?: number;
@@ -77,7 +77,7 @@ export const getSessionByCode = async (req: Request, res: Response, next: NextFu
 
 export const getSessionsForTeacher = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const sessions = await attendanceService.getSessionsForTeacher(req.user.userId);
     res.json(sessions);
   } catch (e) {

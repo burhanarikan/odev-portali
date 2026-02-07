@@ -14,7 +14,7 @@ const makeUpService = new MakeUpService();
 
 export const getAssignments = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const assignments = await studentService.getStudentAssignments(req.user.userId);
     res.json(assignments);
   } catch (error: unknown) {
@@ -29,7 +29,7 @@ export const getAssignments = async (req: Request, res: Response, next: NextFunc
 export const getAssignmentById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const assignment = await studentService.getAssignmentById(id ?? '', req.user.userId);
     res.json(assignment);
   } catch (error: unknown) {
@@ -40,7 +40,7 @@ export const getAssignmentById = async (req: Request, res: Response, next: NextF
 export const submitAssignment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validatedData = submissionSchema.parse(req.body);
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const submission = await studentService.submitAssignment(validatedData, req.user.userId);
     res.status(201).json(submission);
   } catch (error: unknown) {
@@ -51,7 +51,7 @@ export const submitAssignment = async (req: Request, res: Response, next: NextFu
 export const getSubmission = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { assignmentId } = req.params;
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const submission = await studentService.getSubmission(assignmentId ?? '', req.user.userId);
     res.json(submission);
   } catch (error: unknown) {
@@ -61,7 +61,7 @@ export const getSubmission = async (req: Request, res: Response, next: NextFunct
 
 export const getEvaluations = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const evaluations = await studentService.getEvaluations(req.user.userId);
     res.json(evaluations);
   } catch (error: unknown) {
@@ -71,7 +71,7 @@ export const getEvaluations = async (req: Request, res: Response, next: NextFunc
 
 export const getMyPortfolio = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const student = await prisma.student.findUnique({
       where: { userId: req.user.userId },
       select: { id: true },
@@ -86,7 +86,7 @@ export const getMyPortfolio = async (req: Request, res: Response, next: NextFunc
 
 export const getConsent = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const consent = await studentService.getConsent(req.user.userId);
     res.json(consent);
   } catch (error: unknown) {
@@ -101,7 +101,7 @@ export const getConsent = async (req: Request, res: Response, next: NextFunction
 
 export const recordConsent = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const consent = await studentService.recordConsent(req.user.userId);
     res.status(201).json({ accepted: true, acceptedAt: consent.acceptedAt });
   } catch (error: unknown) {
@@ -111,7 +111,7 @@ export const recordConsent = async (req: Request, res: Response, next: NextFunct
 
 export const getMissedSessions = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const list = await attendanceService.getMissedSessionsForStudent(req.user.userId);
     res.json(list);
   } catch (error: unknown) {
@@ -121,7 +121,7 @@ export const getMissedSessions = async (req: Request, res: Response, next: NextF
 
 export const getAvailableMakeUpSlots = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const slots = await makeUpService.getAvailableSlotsForStudent(req.user.userId);
     res.json(slots);
   } catch (error: unknown) {
@@ -131,7 +131,7 @@ export const getAvailableMakeUpSlots = async (req: Request, res: Response, next:
 
 export const getMyMakeUpBookings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const bookings = await makeUpService.getMyBookings(req.user.userId);
     res.json(bookings);
   } catch (error: unknown) {
@@ -142,7 +142,7 @@ export const getMyMakeUpBookings = async (req: Request, res: Response, next: Nex
 export const bookMakeUpSlot = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { slotId } = req.params;
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const booking = await makeUpService.bookSlot(req.user.userId, slotId ?? '');
     res.status(201).json(booking);
   } catch (error: unknown) {

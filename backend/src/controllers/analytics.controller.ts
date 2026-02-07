@@ -26,7 +26,7 @@ export const getStudentProgress = async (req: Request, res: Response, next: Next
 
 export const getTeacherPerformance = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const teacherIdParam = req.user.role === 'ADMIN' ? (req.query.teacherId as string | undefined) : undefined;
     const performance = await analyticsService.getTeacherPerformance(req.user.userId, teacherIdParam);
     res.json(performance);

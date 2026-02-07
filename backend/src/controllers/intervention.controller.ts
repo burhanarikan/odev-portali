@@ -6,7 +6,7 @@ const service = new InterventionService();
 
 export const getAtRiskStudents = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const teacherId = req.user.role === 'TEACHER' ? req.user.userId : undefined;
     const list = await service.getAtRiskStudents(teacherId);
     res.json(list);
@@ -17,7 +17,7 @@ export const getAtRiskStudents = async (req: Request, res: Response, next: NextF
 
 export const addLog = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const body = req.body as { studentId?: string; reason?: string; note?: string };
     if (!body.studentId || !body.reason?.trim()) return res.status(400).json({ error: 'studentId ve reason gerekli' });
     const log = await service.addLog(req.user.userId, {
@@ -33,7 +33,7 @@ export const addLog = async (req: Request, res: Response, next: NextFunction) =>
 
 export const getLogs = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const studentId = req.query.studentId as string | undefined;
     const list = await service.getLogs(studentId, req.user.userId, req.user.role);
     res.json(list);

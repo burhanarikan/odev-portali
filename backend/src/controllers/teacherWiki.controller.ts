@@ -23,7 +23,7 @@ export const getPage = async (req: Request, res: Response, next: NextFunction) =
 
 export const createPage = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const body = req.body as { title?: string; content?: string; category?: string };
     const page = await service.create(req.user.userId, {
       title: body.title ?? '',
@@ -38,7 +38,7 @@ export const createPage = async (req: Request, res: Response, next: NextFunction
 
 export const updatePage = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const body = req.body as { title?: string; content?: string; category?: string };
     const page = await service.update(
       req.params.id ?? '',
@@ -54,7 +54,7 @@ export const updatePage = async (req: Request, res: Response, next: NextFunction
 
 export const deletePage = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     await service.delete(req.params.id ?? '', req.user.userId, req.user.role === 'ADMIN');
     res.status(204).send();
   } catch (e) {

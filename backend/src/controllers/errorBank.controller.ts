@@ -6,7 +6,7 @@ const service = new ErrorBankService();
 
 export const getMyErrors = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const data = await service.getMyErrors(req.user.userId);
     res.json(data);
   } catch (e) {
@@ -16,7 +16,7 @@ export const getMyErrors = async (req: Request, res: Response, next: NextFunctio
 
 export const getReviewList = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const data = await service.getReviewList(req.user.userId);
     res.json(data);
   } catch (e) {
@@ -26,7 +26,7 @@ export const getReviewList = async (req: Request, res: Response, next: NextFunct
 
 export const addError = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const body = req.body as { studentId?: string; errorText?: string; submissionId?: string };
     if (!body.studentId || !body.errorText?.trim()) return res.status(400).json({ error: 'studentId ve errorText gerekli' });
     const entry = await service.add(req.user.userId, {
@@ -42,7 +42,7 @@ export const addError = async (req: Request, res: Response, next: NextFunction) 
 
 export const getErrorsByStudent = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const studentId = req.params.studentId ?? '';
     const list = await service.getByStudent(studentId, req.user.userId);
     res.json(list);
