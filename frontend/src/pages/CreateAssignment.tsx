@@ -205,10 +205,16 @@ export const CreateAssignment = () => {
               </div>
             </div>
 
-            {/* Benzer ödevler - başlık/açıklama yazılınca canlı listele; eşleşen kelimeler ve detay link */}
+            {/* Benzer ödevler - sabit yükseklik: sonuç sayısı değişince sayfa kaymaz; liste içeride scroll olur */}
             {hasEnoughText && (
-              <Card className={liveSimilarAssignments.length > 0 ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200'}>
-                <CardHeader className="py-3">
+              <Card
+                className={
+                  'flex flex-col ' +
+                  (liveSimilarAssignments.length > 0 ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200')
+                }
+                style={{ minHeight: 320 }}
+              >
+                <CardHeader className="py-3 flex-shrink-0">
                   <CardTitle className="text-sm font-medium flex items-center gap-2 flex-wrap">
                     {liveSimilarLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -232,7 +238,7 @@ export const CreateAssignment = () => {
                         : liveSimilarWarning || 'Aynı veya benzer kelimeler geçen mevcut ödevler. Aynı ödevi tekrar vermemek için başlık/açıklamayı gözden geçirin.'}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 flex-1 min-h-0 flex flex-col">
                   {liveSimilarLoading ? (
                     <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -241,7 +247,7 @@ export const CreateAssignment = () => {
                   ) : liveSimilarAssignments.length === 0 ? (
                     <p className="text-sm text-gray-500 py-1">Bu metinde benzer ödev bulunamadı.</p>
                   ) : (
-                    <ul className="space-y-3 max-h-[440px] overflow-y-auto pr-1">
+                    <ul className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 max-h-[260px]">
                       {liveSimilarAssignments.map((a) => {
                         const severity =
                           a.similarityScore >= 70 ? 'yüksek' : a.similarityScore >= 40 ? 'orta' : 'düşük';

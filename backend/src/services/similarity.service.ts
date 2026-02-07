@@ -44,15 +44,22 @@ export class SimilarityService {
   }
 
   /**
-   * Skor ve eşleşen kelimeler: kullanıcı kelimelerinden hangileri mevcut ödevde (tam veya prefix) eşleşiyor.
+   * Çift yönlü kelime eşleşmesi: yeni ödevdeki kelimeler eski ödevde varsa VEYA eski ödevdeki kelimeler yeni ödevde varsa benzer sayılır.
+   * Skor: eşleşen (birleşik) kelime sayısı / toplam benzersiz kelime; matchedWords = tüm ortak kelimeler.
    */
-  private wordMatchScoreAndWords(userTokens: string[], existingTokens: string[]): { score: number; matchedWords: string[] } {
-    if (userTokens.length === 0) return { score: 0, matchedWords: [] };
-    const matchedWords: string[] = [];
-    for (const u of userTokens) {
-      if (existingTokens.some((t) => this.tokenMatches(u, t))) matchedWords.push(u);
+  private wordMatchScoreAndWords(newTokens: string[], existingTokens: string[]): { score: number; matchedWords: string[] } {
+    if (newTokens.length === 0 && existingTokens.length === 0) return { score: 0, matchedWords: [] };
+    const matchedFromNew: string[] = [];
+    const matchedFromExisting: string[] = [];
+    for (const u of newTokens) {
+      if (existingTokens.some((t) => this.tokenMatches(u, t))) matchedFromNew.push(u);
     }
-    const score = matchedWords.length / userTokens.length;
+    for (const e of existingTokens) {
+      if (newTokens.some((t) => this.tokenMatches(e, t))) matchedFromExisting.push(e);
+    }
+    const matchedWords = [...new Set([...matchedFromNew, ...matchedFromExisting])];
+    const totalUnique = new Set([...newTokens, ...existingTokens]).size;
+    const score = totalUnique > 0 ? matchedWords.length / totalUnique : 0;
     return { score, matchedWords };
   }
 
@@ -92,7 +99,7 @@ export class SimilarityService {
       const existingTokens = this.tokenize(existingText);
 
       const { score, matchedWords } = this.wordMatchScoreAndWords(newTokens, existingTokens);
-      if (score <= 0) continue;
+      if (matchedWords.length === 0) continue;
 
       const targetsSummary = this.formatTargetsSummary(assignment.targets);
       similar.push({

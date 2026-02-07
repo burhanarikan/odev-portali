@@ -50,6 +50,9 @@ api.interceptors.response.use(
       const msg = error.response?.data?.error || 'Çok fazla istek. Lütfen birkaç dakika sonra tekrar deneyin.';
       error.message = msg;
     }
+    if (status === 503) {
+      error.message = error.response?.data?.error || 'Servis şu an hazır değil. Birkaç saniye sonra sayfayı yenileyin.';
+    }
     return Promise.reject(error);
   }
 );

@@ -4,7 +4,7 @@ import { authenticate, authorize } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/', listAnnouncements);
+router.get('/', authenticate, listAnnouncements);
 router.post('/', authenticate, authorize(['TEACHER', 'ADMIN']), createAnnouncement);
 router.delete('/:id', authenticate, authorize(['TEACHER', 'ADMIN']), deleteAnnouncement);
 

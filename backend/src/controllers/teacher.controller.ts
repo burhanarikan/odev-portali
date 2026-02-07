@@ -18,7 +18,8 @@ export const createAssignment = async (req: Request, res: Response, next: NextFu
     const validatedData = assignmentSchema.parse(req.body);
     if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const result = await assignmentService.createAssignment(validatedData, req.user.userId);
-    res.status(201).json(result);
+    res.status(201);
+    sendJson(res, result);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
   }
