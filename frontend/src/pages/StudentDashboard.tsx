@@ -41,7 +41,10 @@ export const StudentDashboard = () => {
   const setConsentModalOpen = useConsentStore((s) => s.setConsentModalOpen);
 
   if (isLoading) return <PageLoading message="Ödevler yükleniyor…" />;
-  if (error) return <PageError message="Ödevler yüklenirken bir hata oluştu." onRetry={() => window.location.reload()} />;
+  if (error) {
+    const message = (error as Error)?.message || 'Ödevler yüklenirken bir hata oluştu.';
+    return <PageError message={message} onRetry={() => window.location.reload()} />;
+  }
 
   const getStatusBadge = (assignment: import('@/types').Assignment) => {
     const hasSubmission = assignment.submissions && assignment.submissions.length > 0;

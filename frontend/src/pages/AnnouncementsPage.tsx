@@ -28,7 +28,7 @@ export const AnnouncementsPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: list = [], isLoading } = useQuery({
+  const { data: list = [], isLoading, error: listError } = useQuery({
     queryKey: ['announcements'],
     queryFn: announcementApi.list,
   });
@@ -62,6 +62,24 @@ export const AnnouncementsPage = () => {
     }
     createMutation.mutate({ title: title.trim(), body: body.trim() });
   };
+
+  if (listError) {
+    const message = (listError as Error)?.message || 'Duyurular yüklenemedi.';
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Duyurular</h1>
+          <p className="text-gray-600">Speaking Club, sınav tarihleri, genel duyurular</p>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-red-600">{message}</p>
+            <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

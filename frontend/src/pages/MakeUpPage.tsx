@@ -11,17 +11,17 @@ export const MakeUpPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: missed = [], isLoading: loadingMissed } = useQuery({
+  const { data: missed = [], isLoading: loadingMissed, error: missedError } = useQuery({
     queryKey: ['student', 'missed-sessions'],
     queryFn: studentApi.getMissedSessions,
   });
 
-  const { data: availableSlots = [], isLoading: loadingSlots } = useQuery({
+  const { data: availableSlots = [], isLoading: loadingSlots, error: slotsError } = useQuery({
     queryKey: ['student', 'makeup-slots'],
     queryFn: studentApi.getAvailableMakeUpSlots,
   });
 
-  const { data: myBookings = [], isLoading: loadingBookings } = useQuery({
+  const { data: myBookings = [], isLoading: loadingBookings, error: bookingsError } = useQuery({
     queryKey: ['student', 'makeup-bookings'],
     queryFn: studentApi.getMyMakeUpBookings,
   });
@@ -37,6 +37,25 @@ export const MakeUpPage = () => {
       toast({ title: 'Randevu alınamadı', description: e.message, variant: 'destructive' });
     },
   });
+
+  const anyError = missedError || slotsError || bookingsError;
+  if (anyError) {
+    const message = (anyError as Error)?.message || 'Veriler yüklenirken bir hata oluştu.';
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Ders telafi & eksik konu</h1>
+          <p className="text-gray-600">Kaçırdığınız dersler ve telafi randevusu</p>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-red-600">{message}</p>
+            <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loadingMissed && loadingSlots && loadingBookings) {
     return (

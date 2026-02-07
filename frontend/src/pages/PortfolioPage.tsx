@@ -34,10 +34,12 @@ export const PortfolioPage = () => {
   }
 
   if (error || !portfolio) {
+    const message = (error as Error)?.message || 'Portfolyo yüklenemedi.';
     return (
       <Card>
-        <CardContent className="py-12 text-center text-red-600">
-          Portfolyo yüklenemedi.
+        <CardContent className="py-12 text-center">
+          <p className="text-red-600">{message}</p>
+          <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
         </CardContent>
       </Card>
     );

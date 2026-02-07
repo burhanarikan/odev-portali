@@ -18,13 +18,13 @@ export const TimelinePage = () => {
   const queryClient = useQueryClient();
   const isStudent = user?.role === 'STUDENT';
 
-  const { data: posts = [], isLoading } = useQuery({
+  const { data: posts = [], isLoading, error: timelineError } = useQuery({
     queryKey: ['timeline', 'my'],
     queryFn: timelineApi.getMyTimeline,
     enabled: isStudent,
   });
 
-  const { data: teacherClasses = [] } = useQuery({
+  const { data: teacherClasses = [], error: teacherClassesError } = useQuery({
     queryKey: ['timeline', 'teacher-classes'],
     queryFn: timelineApi.getTeacherClasses,
     enabled: !isStudent,
@@ -60,6 +60,7 @@ export const TimelinePage = () => {
   });
 
   const displayPosts = isStudent ? posts : classPosts;
+  const hasError = isStudent ? timelineError : teacherClassesError;
 
   const handleSubmit = () => {
     if (!selectedClassId && !isStudent) {
@@ -77,6 +78,24 @@ export const TimelinePage = () => {
       linkUrl: linkUrl.trim() || undefined,
     });
   };
+
+  if (hasError) {
+    const message = (hasError as Error)?.message || 'Zaman tüneli yüklenemedi.';
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Sınıfın Zaman Tüneli</h1>
+          <p className="text-gray-600">Haftalık ders özetleri ve paylaşımlar</p>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-red-600">{message}</p>
+            <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

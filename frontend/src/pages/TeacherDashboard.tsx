@@ -17,7 +17,10 @@ export const TeacherDashboard = () => {
   const pendingGrading = submissions.filter((s) => !s.evaluation).slice(0, 5);
 
   if (isLoading) return <PageLoading message="Ödevler yükleniyor…" />;
-  if (error) return <PageError message="Ödevler yüklenirken bir hata oluştu." onRetry={() => window.location.reload()} />;
+  if (error) {
+    const message = (error as Error)?.message || 'Ödevler yüklenirken bir hata oluştu.';
+    return <PageError message={message} onRetry={() => window.location.reload()} />;
+  }
 
   const totalAssignments = assignments?.length || 0;
   const draftAssignments = assignments?.filter(a => a.isDraft).length || 0;

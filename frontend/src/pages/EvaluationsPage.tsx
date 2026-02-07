@@ -37,9 +37,11 @@ export const EvaluationsPage = () => {
   }
 
   if (error) {
+    const message = (error as Error)?.message || 'Değerlendirmeler yüklenirken bir hata oluştu.';
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">Değerlendirmeler yüklenirken bir hata oluştu.</p>
+        <p className="text-red-600">{message}</p>
+        <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
       </div>
     );
   }
@@ -61,7 +63,7 @@ export const EvaluationsPage = () => {
             <p className="text-sm text-gray-500 mt-1">
               Teslim ettiğiniz ödevler değerlendirildikçe burada listelenecek.
             </p>
-            <Link to="/dashboard" className="mt-4">
+            <Link to="/student" className="mt-4">
               <Button variant="outline">Ana Sayfaya Dön</Button>
             </Link>
           </CardContent>

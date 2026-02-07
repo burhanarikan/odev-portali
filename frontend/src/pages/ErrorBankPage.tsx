@@ -5,7 +5,7 @@ import { formatDate } from '@/utils/formatDate';
 import { Loader2, AlertTriangle, BookOpen } from 'lucide-react';
 
 export const ErrorBankPage = () => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['error-bank', 'my'],
     queryFn: errorBankApi.getMyErrors,
   });
@@ -14,7 +14,7 @@ export const ErrorBankPage = () => {
     queryFn: errorBankApi.getReviewList,
   });
 
-  if (isLoading || !data) {
+  if (isLoading || (!data && !error)) {
     return (
       <div className="flex justify-center py-16">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -22,7 +22,25 @@ export const ErrorBankPage = () => {
     );
   }
 
-  const { entries, uniqueErrors } = data;
+  if (error) {
+    const message = (error as Error)?.message || 'Hata bankası yüklenemedi.';
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Hata Bankası</h1>
+          <p className="text-gray-600">Dikkat etmeniz gereken hatalar</p>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-red-600">{message}</p>
+            <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { entries, uniqueErrors } = data!;
   const reviewItems = reviewList?.items ?? [];
 
   return (
