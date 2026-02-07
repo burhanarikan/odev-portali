@@ -22,8 +22,13 @@ const app = express();
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Too many requests from this IP, please try again later.',
+  max: parseInt(process.env.RATE_LIMIT_MAX || '600', 10),
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === '/health',
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Çok fazla istek. Lütfen birkaç dakika sonra tekrar deneyin.' });
+  },
 });
 
 app.use(helmet());

@@ -42,11 +42,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = error.response?.status;
     const isLoginRequest = error.config?.url?.includes('/auth/login');
-    if (error.response?.status === 401 && !isLoginRequest) {
+    if (status === 401 && !isLoginRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    }
+    if (status === 429) {
+      const msg = error.response?.data?.error || 'Çok fazla istek. Lütfen birkaç dakika sonra tekrar deneyin.';
+      error.message = msg;
     }
     return Promise.reject(error);
   }

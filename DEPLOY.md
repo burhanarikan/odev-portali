@@ -51,6 +51,7 @@ DATABASE_URL="postgresql://..." npx prisma db seed
    - `JWT_SECRET` = uzun rastgele bir string
    - `NODE_ENV` = `production`
    - `PORT` = Render otomatik atar, kodda `process.env.PORT || 5050` kullanın
+   - `RATE_LIMIT_MAX` = (isteğe bağlı) 15 dakikada izin verilen istek sayısı; varsayılan 600. Öğrenci sayfası çok istek attığı için 429 alıyorsanız bu değeri artırın (örn. 800–1000).
 5. **Create Web Service**. Backend URL örn: `https://odev-portali-backend.onrender.com`
 
 6. **Önemli — Migration:** Backend ilk kez çalıştıktan sonra, canlı veritabanında tabloların oluşması için migration’ları bir kez çalıştırın. Aksi halde `/api/student/assignments` ve `/api/student/consent` 500 döner (tablo bulunamadı). Lokal veya CI’da:
