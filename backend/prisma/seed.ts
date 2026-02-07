@@ -10,6 +10,8 @@ import {
   TEST_STUDENT,
   STUDENTS_A101,
   STUDENTS_A102,
+  A1_ASSIGNMENT_TITLES,
+  A2_ASSIGNMENT_TITLES,
   B1_ASSIGNMENT_TITLES,
   ANNOUNCEMENT_TITLES,
   TIMELINE_SUMMARIES,
@@ -176,9 +178,89 @@ async function main() {
 
   const allStudentIds = [...studentIdsA101, ...studentIdsA102];
 
-  // --- B1 ödevler: 20+ hafta geçmiş + güncel. Homework + Assignment, her ikisi sınıfa atanmış ---
   const now = new Date();
   const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+
+  // --- A1 geçmiş kur ödevleri (10 hafta, 30–40 hafta önce) ---
+  for (let week = 1; week <= A1_ASSIGNMENT_TITLES.length; week++) {
+    const title = A1_ASSIGNMENT_TITLES[week - 1];
+    const startDate = new Date(now.getTime() - (40 - week) * oneWeekMs);
+    const dueDate = new Date(startDate.getTime() + oneWeekMs);
+    const teacherId = pick(teacherIds);
+    let homework = await prisma.homework.findFirst({ where: { levelId: levelA1.id, weekNumber: week } });
+    if (!homework) {
+      homework = await prisma.homework.create({
+        data: {
+          teacherId,
+          levelId: levelA1.id,
+          weekNumber: week,
+          title,
+          description: `A1 hafta ${week} ödevi.`,
+          type: 'TEXT',
+        },
+      });
+    }
+    const existing = await prisma.assignment.findFirst({ where: { levelId: levelA1.id, weekNumber: week } });
+    if (!existing) {
+      await prisma.assignment.create({
+        data: {
+          homeworkId: homework.id,
+          title,
+          description: `A1 hafta ${week}.`,
+          levelId: levelA1.id,
+          weekNumber: week,
+          createdBy: teacherId,
+          startDate,
+          dueDate,
+          isDraft: false,
+          attachments: '[]',
+        },
+      });
+    }
+  }
+
+  // --- A2 geçmiş kur ödevleri (10 hafta, 20–30 hafta önce) ---
+  const levelA2 = await prisma.level.findUnique({ where: { name: 'A2' } });
+  if (levelA2) {
+    for (let week = 1; week <= A2_ASSIGNMENT_TITLES.length; week++) {
+      const title = A2_ASSIGNMENT_TITLES[week - 1];
+      const startDate = new Date(now.getTime() - (30 - week) * oneWeekMs);
+      const dueDate = new Date(startDate.getTime() + oneWeekMs);
+      const teacherId = pick(teacherIds);
+      let homework = await prisma.homework.findFirst({ where: { levelId: levelA2.id, weekNumber: week } });
+      if (!homework) {
+        homework = await prisma.homework.create({
+          data: {
+            teacherId,
+            levelId: levelA2.id,
+            weekNumber: week,
+            title,
+            description: `A2 hafta ${week} ödevi.`,
+            type: 'TEXT',
+          },
+        });
+      }
+      const existing = await prisma.assignment.findFirst({ where: { levelId: levelA2.id, weekNumber: week } });
+      if (!existing) {
+        await prisma.assignment.create({
+          data: {
+            homeworkId: homework.id,
+            title,
+            description: `A2 hafta ${week}.`,
+            levelId: levelA2.id,
+            weekNumber: week,
+            createdBy: teacherId,
+            startDate,
+            dueDate,
+            isDraft: false,
+            attachments: '[]',
+          },
+        });
+      }
+    }
+  }
+
+  // --- B1 ödevler: 20+ hafta geçmiş + güncel. Homework + Assignment, her ikisi sınıfa atanmış ---
 
   for (let week = 1; week <= B1_ASSIGNMENT_TITLES.length; week++) {
     const title = B1_ASSIGNMENT_TITLES[week - 1];
@@ -313,9 +395,10 @@ async function main() {
     }
   }
 
-  // --- Zaman tüneli: sınıf bazlı, 20+ hafta paylaşım ---
+  // --- Zaman tüneli: sınıf bazlı, 30 hafta paylaşım (dolu görünsün) ---
   const classes = [classA101, classA102];
-  for (let w = 0; w < 22; w++) {
+  const timelineWeeks = 30;
+  for (let w = 0; w < timelineWeeks; w++) {
     const postDate = weeksAgo(w);
     for (const cls of classes) {
       await prisma.timelinePost.create({
@@ -404,8 +487,9 @@ async function main() {
   }).catch(() => {});
 
   console.log('Demo seed tamamlandı.');
-  console.log('  Seviyeler: A1, A2, B1 (B1 aktif)');
+  console.log('  Seviyeler: A1, A2, B1 (A1/A2 geçmiş kur ödevleri, B1 aktif)');
   console.log('  Sınıflar: A101, A102 (~25 öğrenci each)');
+  console.log('  Ödevler: A1 (10 hft), A2 (10 hft), B1 (21 hft); zaman tüneli 30 hft');
   console.log('  Sabit hesaplar (şifre: türkçe):');
   console.log('    PDG: pdg@isubudilmer.com');
   console.log('    Eva: eva@isubudilmer.com');

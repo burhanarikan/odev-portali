@@ -75,6 +75,34 @@ export const STUDENTS_A102 = [
 /** Test öğrenci hesabı (sabit). */
 export const TEST_STUDENT = { name: 'Demo Öğrenci', email: 'ogrenci@isubudilmer.com' };
 
+/** A1 haftalık ödev başlıkları (geçmiş kur, 10 hafta). */
+export const A1_ASSIGNMENT_TITLES = [
+  'A1 - Alfabe ve sesler',
+  'A1 - Selamlaşma ve tanışma',
+  'A1 - Sayılar 1-100',
+  'A1 - Günlük ifadeler',
+  'A1 - Aile ve meslekler',
+  'A1 - Haftanın günleri',
+  'A1 - Basit cümleler',
+  'A1 - Soru kalıpları',
+  'A1 - Şimdiki zaman',
+  'A1 - Kur sonu değerlendirme',
+];
+
+/** A2 haftalık ödev başlıkları (geçmiş kur, 10 hafta). */
+export const A2_ASSIGNMENT_TITLES = [
+  'A2 - Geçmiş zaman',
+  'A2 - Günlük rutin',
+  'A2 - Yemek ve alışveriş',
+  'A2 - Şehir ve ulaşım',
+  'A2 - Hava durumu',
+  'A2 - Planlar ve öneriler',
+  'A2 - Kısa paragraf',
+  'A2 - Mektup / e-posta',
+  'A2 - Dinleme özeti',
+  'A2 - Kur sonu değerlendirme',
+];
+
 /** B1 haftalık ödev başlıkları (20 hafta + güncel). */
 export const B1_ASSIGNMENT_TITLES = [
   'B1 - Kendinizi tanıtın',

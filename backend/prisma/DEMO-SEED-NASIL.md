@@ -1,6 +1,13 @@
 # Demo Seed – B1 Aktif Dil Okulu Simülasyonu
 
-Bu seed, **A1/A2 tamamlanmış, B1 aktif** bir dil okulu görüntüsü oluşturur. Zaman tüneli, duyurular, ödevler, teslimler, yoklama ve müdahale kayıtları 20+ haftalık geçmişle doldurulur.
+Bu seed, **A1/A2 tamamlanmış, B1 aktif** bir dil okulu görüntüsü oluşturur:
+
+- **Geçmiş kurlar:** A1 ve A2 seviyelerinde 10’ar haftalık ödev (geçmiş tarihli).
+- **B1:** 21 haftalık ödev + teslimler + değerlendirmeler.
+- **Zaman tüneli:** 30 hafta × 2 sınıf = 60 paylaşım.
+- **Duyurular, yoklama, müdahale, hata bankası** doldurulur.
+
+**Production’da zaman tüneli / duyurular / ödev listesi dolu görünsün istiyorsanız:** Seed’i **production DATABASE_URL** ile (Neon’a bağlanarak) **bir kez** çalıştırın. Tablolar `production-fix-all.sql` ile oluşturulduktan sonra `npx prisma db seed` production veritabanını doldurur.
 
 ## Çalıştırma
 
@@ -30,13 +37,13 @@ Diğer öğretmen ve öğrenciler: **şifre `123456`**. Öğrenci e-postaları `
 - **Seviyeler:** A1, A2, B1
 - **Sınıflar:** A101, A102 (B1); sınıf başına ~25 öğrenci
 - **Personel:** 1 admin (PDG) + 6 öğretmen (Eva dahil)
-- **Öğrenciler:** Ağırlık Afrika (Nijerya, Gana, Kenya, Sudan, Somali vb.), az sayıda Türkmenistan/Kazakistan, AB/Amerika/Asya; isim–ülke uyumlu
-- **Ödevler:** B1 için 21 haftalık ödev (geçmiş + güncel)
-- **Teslimler:** Öğrencilerin ~%70–90’ı teslim etmiş; bir kısmı gecikmeli
+- **Öğrenciler:** Ağırlık Afrika, az Türkmenistan/Kazakistan, AB/Amerika/Asya; isim–ülke uyumlu
+- **Ödevler:** A1 (10 hafta, geçmiş), A2 (10 hafta, geçmiş), B1 (21 hafta, geçmiş + güncel)
+- **Teslimler:** B1 ödevleri için öğrencilerin ~%70–90’ı teslim etmiş; bir kısmı gecikmeli
 - **Değerlendirmeler:** Sınav puanları 45–95 arası dağılım
 - **Hata bankası:** Öğrencilerin bir kısmında grammar/vocabulary kayıtları
 - **Duyurular:** 22 duyuru, PDG ve öğretmenler
-- **Zaman tüneli:** 22 hafta × 2 sınıf = 44 paylaşım
+- **Zaman tüneli:** 30 hafta × 2 sınıf = 60 paylaşım
 - **Yoklama:** Haftalık oturumlar, öğrencilerin ~%75–95’i katılmış
 - **Müdahale logları:** Devamsızlık / ödev eksikliği / akademik risk
 - **Beceri puanları:** vocabulary, grammar, listening, speaking (50–95)
