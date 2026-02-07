@@ -19,8 +19,118 @@ ALTER TABLE "assignments" ADD COLUMN IF NOT EXISTS "peer_reviews_per_student" IN
 ALTER TABLE "submissions" ADD COLUMN IF NOT EXISTS "audioUrl" TEXT;
 ALTER TABLE "submissions" ADD COLUMN IF NOT EXISTS "fileUrl" TEXT;
 
--- homeworks
+-- evaluations (PDF annotator)
+ALTER TABLE "evaluations" ADD COLUMN IF NOT EXISTS "annotation_data" JSONB;
+
+-- homeworks (Prisma alan adı: fileUrl, audioUrl → DB'de aynı veya file_url/audio_url)
 ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "instructions" TEXT;
 ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "type" TEXT NOT NULL DEFAULT 'TEXT';
 ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "file_url" TEXT;
 ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "audio_url" TEXT;
+ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "fileUrl" TEXT;
+ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "audioUrl" TEXT;
+
+-- attendance_sessions (yoksa oluştur)
+CREATE TABLE IF NOT EXISTS "attendance_sessions" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "class_id" TEXT NOT NULL,
+    "teacher_id" TEXT NOT NULL,
+    "start_time" TIMESTAMP(3) NOT NULL,
+    "end_time" TIMESTAMP(3) NOT NULL,
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
+    "topic" TEXT,
+    "resource_links" JSONB DEFAULT '[]',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "attendance_sessions_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "attendance_sessions_code_key" ON "attendance_sessions"("code");
+
+-- attendance_records (yoksa oluştur)
+CREATE TABLE IF NOT EXISTS "attendance_records" (
+    "id" TEXT NOT NULL,
+    "session_id" TEXT NOT NULL,
+    "student_id" TEXT NOT NULL,
+    "joined_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
+    "location_ok" BOOLEAN NOT NULL DEFAULT false,
+    "reject_reason" TEXT,
+    CONSTRAINT "attendance_records_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "attendance_records_session_id_student_id_key" ON "attendance_records"("session_id", "student_id");
+
+-- make_up_slots
+CREATE TABLE IF NOT EXISTS "make_up_slots" (
+    "id" TEXT NOT NULL,
+    "class_id" TEXT NOT NULL,
+    "teacher_id" TEXT NOT NULL,
+    "slot_start" TIMESTAMP(3) NOT NULL,
+    "slot_end" TIMESTAMP(3) NOT NULL,
+    "title" TEXT,
+    "max_students" INTEGER NOT NULL DEFAULT 10,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "make_up_slots_pkey" PRIMARY KEY ("id")
+);
+
+-- make_up_bookings
+CREATE TABLE IF NOT EXISTS "make_up_bookings" (
+    "id" TEXT NOT NULL,
+    "slot_id" TEXT NOT NULL,
+    "student_id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "make_up_bookings_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "make_up_bookings_slot_id_student_id_key" ON "make_up_bookings"("slot_id", "student_id");
+
+-- student_skill_scores
+CREATE TABLE IF NOT EXISTS "student_skill_scores" (
+    "id" TEXT NOT NULL,
+    "student_id" TEXT NOT NULL,
+    "vocabulary" INTEGER NOT NULL DEFAULT 0,
+    "grammar" INTEGER NOT NULL DEFAULT 0,
+    "listening" INTEGER NOT NULL DEFAULT 0,
+    "speaking" INTEGER NOT NULL DEFAULT 0,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "student_skill_scores_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "student_skill_scores_student_id_key" ON "student_skill_scores"("student_id");
+
+-- Foreign key'ler (tablo zaten varsa eklenmiş olabilir; hata verirse yok sayın)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'attendance_sessions_class_id_fkey') THEN
+    ALTER TABLE "attendance_sessions" ADD CONSTRAINT "attendance_sessions_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "classes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'attendance_sessions_teacher_id_fkey') THEN
+    ALTER TABLE "attendance_sessions" ADD CONSTRAINT "attendance_sessions_teacher_id_fkey" FOREIGN KEY ("teacher_id") REFERENCES "teachers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'attendance_records_session_id_fkey') THEN
+    ALTER TABLE "attendance_records" ADD CONSTRAINT "attendance_records_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "attendance_sessions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'attendance_records_student_id_fkey') THEN
+    ALTER TABLE "attendance_records" ADD CONSTRAINT "attendance_records_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'make_up_slots_class_id_fkey') THEN
+    ALTER TABLE "make_up_slots" ADD CONSTRAINT "make_up_slots_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "classes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'make_up_slots_teacher_id_fkey') THEN
+    ALTER TABLE "make_up_slots" ADD CONSTRAINT "make_up_slots_teacher_id_fkey" FOREIGN KEY ("teacher_id") REFERENCES "teachers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'make_up_bookings_slot_id_fkey') THEN
+    ALTER TABLE "make_up_bookings" ADD CONSTRAINT "make_up_bookings_slot_id_fkey" FOREIGN KEY ("slot_id") REFERENCES "make_up_slots"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'make_up_bookings_student_id_fkey') THEN
+    ALTER TABLE "make_up_bookings" ADD CONSTRAINT "make_up_bookings_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'student_skill_scores_student_id_fkey') THEN
+    ALTER TABLE "student_skill_scores" ADD CONSTRAINT "student_skill_scores_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
