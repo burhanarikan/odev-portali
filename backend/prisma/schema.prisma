@@ -35,11 +35,23 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  student      Student?
-  teacher      Teacher?
+  student       Student?
+  teacher       Teacher?
   announcements Announcement[]
+  consent       UserConsent?
 
   @@map("users")
+}
+
+/// Öğrenci/veli dijital onayı: KVKK ve kurum kuralları (ödev teslimi için zorunlu).
+model UserConsent {
+  id         String   @id @default(uuid())
+  userId     String   @unique @map("user_id")
+  acceptedAt DateTime @default(now()) @map("accepted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_consents")
 }
 
 model Level {
@@ -67,6 +79,7 @@ model Class {
   assignmentTargets   AssignmentTarget[]
   attendanceSessions  AttendanceSession[]
   timelinePosts       TimelinePost[]
+  makeUpSlots         MakeUpSlot[]
 
   @@unique([name, levelId])
   @@map("classes")
@@ -88,8 +101,25 @@ model Student {
   peerReviewsGiven   PeerReview[]
   errorBankEntries   ErrorBankEntry[]
   interventionLogs   InterventionLog[]
+  skillScore         StudentSkillScore?
+  makeUpBookings     MakeUpBooking[]
 
   @@map("students")
+}
+
+/// Başarı ısı haritası (radar grafik) için: Kelime, Dilbilgisi, Dinleme, Konuşma (0-100).
+model StudentSkillScore {
+  id          String   @id @default(uuid())
+  studentId   String   @unique @map("student_id")
+  vocabulary  Int      @default(0)  // Kelime
+  grammar     Int      @default(0)  // Dilbilgisi
+  listening   Int      @default(0)  // Dinleme
+  speaking    Int      @default(0)  // Konuşma
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("student_skill_scores")
 }
 
 model Teacher {
@@ -107,8 +137,25 @@ model Teacher {
   teacherResources   TeacherResource[]
   errorBankEntries   ErrorBankEntry[]
   interventionLogs   InterventionLog[]
+  makeUpSlots        MakeUpSlot[]
+  wikiPages          TeacherWikiPage[]
 
   @@map("teachers")
+}
+
+/// Öğretmenler odası (wiki): Ders rehberi, zor konular nasıl anlatılır vb. Sadece öğretmenler görür/düzenler.
+model TeacherWikiPage {
+  id         String   @id @default(uuid())
+  title      String   @db.Text
+  content    String   @db.Text
+  category   String?  @db.Text
+  teacherId  String   @map("teacher_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_wiki_pages")
 }
 
 /// Hocanın oluşturduğu taslak. Metin, dosya, ses veya karışık (MIXED) türünde olabilir.
@@ -266,15 +313,17 @@ model Evaluation {
 
 /// Hoca yoklama başlattığında oluşan oturum. Kod 4–6 haneli, süre sınırlı.
 model AttendanceSession {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  classId   String   @map("class_id")
-  teacherId String   @map("teacher_id")
-  startTime DateTime @map("start_time")
-  endTime   DateTime @map("end_time")
-  latitude  Float?
-  longitude Float?
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid())
+  code         String   @unique
+  classId      String   @map("class_id")
+  teacherId    String   @map("teacher_id")
+  startTime    DateTime @map("start_time")
+  endTime      DateTime @map("end_time")
+  latitude     Float?
+  longitude    Float?
+  topic        String?  @db.Text
+  resourceLinks Json?   @default("[]") @map("resource_links")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   class    Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
   teacher  Teacher            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
@@ -299,6 +348,38 @@ model AttendanceRecord {
 
   @@unique([sessionId, studentId])
   @@map("attendance_records")
+}
+
+/// Telafi dersi slotu: Hocanın açtığı, öğrencinin randevu alabildiği zaman dilimi.
+model MakeUpSlot {
+  id          String   @id @default(uuid())
+  classId     String   @map("class_id")
+  teacherId   String   @map("teacher_id")
+  slotStart   DateTime @map("slot_start")
+  slotEnd     DateTime @map("slot_end")
+  title       String?  @db.Text
+  maxStudents Int      @default(10) @map("max_students")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  class     Class           @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher   Teacher         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  bookings  MakeUpBooking[]
+
+  @@map("make_up_slots")
+}
+
+/// Öğrencinin telafi randevusu.
+model MakeUpBooking {
+  id        String   @id @default(uuid())
+  slotId    String   @map("slot_id")
+  studentId String   @map("student_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  slot    MakeUpSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  student Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([slotId, studentId])
+  @@map("make_up_bookings")
 }
 
 /// Duyurular: "Bu Cuma Speaking Club", "Haftaya sınav" vb. Admin/öğretmen oluşturur.

@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { analyticsApi } from '@/api/analytics.api';
-import { ArrowLeft, BookOpen, FileText } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, FileText, Radar } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
+import { SkillRadarChart } from '@/components/charts/SkillRadarChart';
 
 export const StudentPortfolioPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,8 +20,16 @@ export const StudentPortfolioPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-4 w-64" />
+        <Skeleton className="h-28 rounded-lg" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-16 rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-48 rounded-lg" />
       </div>
     );
   }
@@ -39,7 +48,7 @@ export const StudentPortfolioPage = () => {
     );
   }
 
-  const { student, evaluations, summary } = portfolio;
+  const { student, evaluations, summary, skillScores } = portfolio;
 
   return (
     <div className="space-y-6">
@@ -56,6 +65,23 @@ export const StudentPortfolioPage = () => {
         <h1 className="text-2xl font-bold text-gray-900">Öğrenim yolculuğu</h1>
         <p className="text-gray-600">{student.name} · {student.class} · {student.level}</p>
       </div>
+
+      {skillScores && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Radar className="h-5 w-5" />
+              Başarı ısı haritası
+            </CardTitle>
+            <CardDescription>
+              Kelime, dilbilgisi, dinleme ve konuşma alanlarındaki gelişim özeti (0–100)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <SkillRadarChart skillScores={skillScores} size={260} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

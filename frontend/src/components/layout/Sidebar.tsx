@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/store/authStore';
 import { APP_VERSION, APP_UPDATED_AT } from '@/config/version';
-import { LayoutDashboard, FileText, Users, BarChart3, Inbox, Settings, Award, ClipboardCheck, LogIn, Megaphone, BookOpen, MessageSquare, Clock, Library, AlertTriangle, Phone } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, BarChart3, Inbox, Settings, Award, ClipboardCheck, LogIn, Megaphone, BookOpen, MessageSquare, Clock, Library, AlertTriangle, Phone, CalendarClock, BookMarked } from 'lucide-react';
 
 const navigation = [
   {
@@ -15,6 +15,12 @@ const navigation = [
     name: 'Derse Katıl',
     href: '/attendance/join',
     icon: LogIn,
+    roles: ['STUDENT'],
+  },
+  {
+    name: 'Telafi & Eksik Konu',
+    href: '/makeup',
+    icon: CalendarClock,
     roles: ['STUDENT'],
   },
   {
@@ -78,6 +84,12 @@ const navigation = [
     roles: ['TEACHER', 'ADMIN'],
   },
   {
+    name: 'Öğretmenler Odası (Wiki)',
+    href: '/teacher-wiki',
+    icon: BookMarked,
+    roles: ['TEACHER', 'ADMIN'],
+  },
+  {
     name: 'Müdahale Takvimi',
     href: '/intervention',
     icon: Phone,
@@ -112,9 +124,9 @@ export const Sidebar = () => {
 
   return (
     <div className="hidden md:flex md:w-64 md:flex-col">
-      <div className="flex flex-col flex-grow pt-5 bg-white overflow-y-auto border-r">
+      <div className="flex flex-col flex-grow pt-5 bg-card overflow-y-auto border-r border-border">
         <div className="flex items-center flex-shrink-0 px-4">
-          <h2 className="text-lg font-semibold text-gray-900">Menü</h2>
+          <h2 className="text-lg font-semibold text-foreground">Menü</h2>
         </div>
         <div className="mt-8 flex-1 flex flex-col">
           <nav className="flex-1 px-2 pb-4 space-y-1">
@@ -126,8 +138,8 @@ export const Sidebar = () => {
                   cn(
                     'group flex items-center px-2 py-2 text-sm font-medium rounded-md',
                     isActive
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-muted text-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )
                 }
               >
@@ -136,7 +148,7 @@ export const Sidebar = () => {
                     <item.icon
                       className={cn(
                         'mr-3 h-5 w-5 flex-shrink-0',
-                        isActive ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500'
+                        isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
                       )}
                     />
                     {item.name}
@@ -146,13 +158,13 @@ export const Sidebar = () => {
             ))}
           </nav>
         </div>
-        <div className="flex-shrink-0 px-4 py-3 border-t border-gray-100">
-          <p className="text-xs text-gray-500">
-            <span className="font-medium text-gray-600">{APP_VERSION}</span>
+        <div className="flex-shrink-0 px-4 py-3 border-t border-border">
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium">{APP_VERSION}</span>
             <span className="mx-1">·</span>
             <span>{APP_UPDATED_AT}</span>
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">Güncelleme</p>
+          <p className="text-xs text-muted-foreground/80 mt-0.5">Güncelleme</p>
         </div>
       </div>
     </div>

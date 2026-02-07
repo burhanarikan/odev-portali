@@ -137,7 +137,35 @@ export const teacherApi = {
     const response = await api.get<TeacherSubmission[]>('/teacher/submissions');
     return response.data;
   },
+
+  getMyMakeUpSlots: async () => {
+    const response = await api.get<TeacherMakeUpSlot[]>(`/teacher/makeup-slots`);
+    return response.data;
+  },
+
+  createMakeUpSlot: async (data: {
+    classId: string;
+    slotStart: string;
+    slotEnd: string;
+    title?: string;
+    maxStudents?: number;
+  }) => {
+    const response = await api.post<TeacherMakeUpSlot>('/teacher/makeup-slots', data);
+    return response.data;
+  },
 };
+
+export interface TeacherMakeUpSlot {
+  id: string;
+  classId: string;
+  teacherId: string;
+  slotStart: string;
+  slotEnd: string;
+  title: string | null;
+  maxStudents: number;
+  class?: { id: string; name: string; level?: { name: string } };
+  _count?: { bookings: number };
+}
 
 export interface TeacherSubmission {
   id: string;

@@ -17,6 +17,7 @@ import timelineRoutes from './routes/timeline.routes';
 import teacherResourceRoutes from './routes/teacherResource.routes';
 import errorBankRoutes from './routes/errorBank.routes';
 import interventionRoutes from './routes/intervention.routes';
+import teacherWikiRoutes from './routes/teacherWiki.routes';
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use('/api/timeline', timelineRoutes);
 app.use('/api/teacher-resources', teacherResourceRoutes);
 app.use('/api/error-bank', errorBankRoutes);
 app.use('/api/intervention', interventionRoutes);
+app.use('/api/teacher-wiki', teacherWikiRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

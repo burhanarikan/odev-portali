@@ -20,7 +20,9 @@ export class AttendanceService {
     classId: string,
     durationMinutes: number = DEFAULT_DURATION_MINUTES,
     latitude?: number,
-    longitude?: number
+    longitude?: number,
+    topic?: string,
+    resourceLinks?: string[]
   ) {
     const teacher = await prisma.teacher.findUnique({
       where: { userId: teacherUserId },
@@ -55,6 +57,8 @@ export class AttendanceService {
         endTime,
         latitude: latitude ?? null,
         longitude: longitude ?? null,
+        topic: topic ?? null,
+        resourceLinks: resourceLinks && resourceLinks.length > 0 ? JSON.stringify(resourceLinks) : undefined,
       },
       include: {
         class: { include: { level: true } },
@@ -283,5 +287,47 @@ export class AttendanceService {
     }
 
     return result;
+  }
+
+  /** Öğrencinin kaçırdığı dersler: sınıfındaki yoklama oturumlarından katılmadığı (kayıt yok) olanlar. */
+  async getMissedSessionsForStudent(studentUserId: string) {
+    const student = await prisma.student.findUnique({
+      where: { userId: studentUserId },
+      include: { class: true },
+    });
+    if (!student) throw createError('Öğrenci bulunamadı', 404);
+
+    const sessions = await prisma.attendanceSession.findMany({
+      where: { classId: student.classId },
+      include: {
+        teacher: { include: { user: true } },
+        records: { where: { studentId: student.id }, select: { id: true } },
+      },
+      orderBy: { startTime: 'desc' },
+      take: 30,
+    });
+
+    const missed = sessions.filter((s) => s.records.length === 0);
+    const resourceLinks = (raw: unknown): string[] => {
+      if (Array.isArray(raw)) return raw.filter((x) => typeof x === 'string');
+      if (typeof raw === 'string') {
+        try {
+          const arr = JSON.parse(raw);
+          return Array.isArray(arr) ? arr.filter((x: unknown) => typeof x === 'string') : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
+    return missed.map((s) => ({
+      id: s.id,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      topic: s.topic ?? 'Konu belirtilmedi',
+      resourceLinks: resourceLinks(s.resourceLinks),
+      teacherName: s.teacher?.user?.name ?? '—',
+    }));
   }
 }

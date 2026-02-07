@@ -446,15 +446,22 @@ function SubmissionListCard({
               </button>
               {expandedId === sub.id && (
                 canEvaluate ? (
-                  <SubmissionEvaluationForm
-                    submission={sub}
-                    onSubmit={async (data) => {
-                      await onSubmitEvaluation({ submissionId: sub.id, data });
-                      onSuccess();
-                      onToggleExpand(null);
-                    }}
-                    isSubmitting={isSubmitting}
-                  />
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-0 border-t bg-gray-50/50">
+                    <div className="min-h-0 overflow-y-auto p-4">
+                      <SubmissionContentPreview submission={sub} />
+                    </div>
+                    <div className="lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto border-l border-gray-200 bg-white p-4">
+                      <SubmissionEvaluationForm
+                        submission={sub}
+                        onSubmit={async (data) => {
+                          await onSubmitEvaluation({ submissionId: sub.id, data });
+                          onSuccess();
+                          onToggleExpand(null);
+                        }}
+                        isSubmitting={isSubmitting}
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <div className="p-4 pt-0 border-t bg-gray-50/50 flex items-center gap-2 text-sm text-amber-700">
                     <AlertTriangle className="h-4 w-4 flex-shrink-0" />
@@ -467,6 +474,53 @@ function SubmissionListCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+const QUICK_FEEDBACK_TEMPLATES = [
+  'Aferin! / Good job!',
+  'Yazımı kontrol et. / Check your spelling.',
+  'Dilbilgisine dikkat et. / Revise grammar.',
+  'Çok iyi! / Well done!',
+  'Daha fazla detay ekle. / Add more detail.',
+  'Telaffuza dikkat. / Pay attention to pronunciation.',
+];
+
+function SubmissionContentPreview({ submission }: { submission: SubmissionItem }) {
+  return (
+    <div className="space-y-4">
+      {submission.contentText && (
+        <div>
+          <Label className="text-xs text-gray-500">Teslim edilen metin</Label>
+          <div className="mt-1 p-3 bg-white border rounded text-sm text-gray-700 whitespace-pre-wrap max-h-64 overflow-y-auto">
+            {submission.contentText}
+          </div>
+        </div>
+      )}
+      {submission.audioUrl && (
+        <div>
+          <Label className="text-xs text-gray-500">Öğrenci ses kaydı</Label>
+          <div className="mt-1">
+            <AudioPlayer src={submission.audioUrl} showSpeed />
+          </div>
+        </div>
+      )}
+      {submission.fileUrl && (
+        <div>
+          <Label className="text-xs text-gray-500">Yüklenen dosya</Label>
+          <div className="mt-1">
+            <a
+              href={submission.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+            >
+              <FileText className="h-4 w-4" /> Dosyayı aç / indir
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -504,50 +558,26 @@ function SubmissionEvaluationForm({
     });
   };
 
+  const addQuickFeedback = (text: string) => {
+    setFeedback((prev) => (prev ? `${prev}\n${text}` : text));
+  };
+
   const submissionFileUrl = submission.fileUrl ?? '';
   const isPdf = submissionFileUrl && isPdfUrl(submissionFileUrl);
 
   return (
-    <div className="p-4 pt-0 border-t bg-gray-50/50 space-y-4">
-      {submission.contentText && (
+    <div className="space-y-4">
+      {isPdf && (
         <div>
-          <Label className="text-xs text-gray-500">Teslim edilen metin</Label>
-          <div className="mt-1 p-3 bg-white border rounded text-sm text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto">
-            {submission.contentText}
-          </div>
-        </div>
-      )}
-      {submission.audioUrl && (
-        <div>
-          <Label className="text-xs text-gray-500">Öğrenci ses kaydı</Label>
-          <div className="mt-1">
-            <AudioPlayer src={submission.audioUrl} showSpeed />
-          </div>
-        </div>
-      )}
-      {submission.fileUrl && (
-        <div>
-          <Label className="text-xs text-gray-500">Yüklenen dosya</Label>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <a
-              href={submission.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-            >
-              <FileText className="h-4 w-4" /> Dosyayı aç / indir
-            </a>
-            {isPdf && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setPdfAnnotatorOpen(true)}
-              >
-                PDF üzerinde işaretle (kırmızı kalem / yorum)
-              </Button>
-            )}
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => setPdfAnnotatorOpen(true)}
+          >
+            PDF üzerinde işaretle (kırmızı kalem / yorum)
+          </Button>
         </div>
       )}
       {isPdf && pdfAnnotatorOpen && (
@@ -626,6 +656,18 @@ function SubmissionEvaluationForm({
         </div>
         <div>
           <Label htmlFor={`feedback-${submission.id}`}>Geri bildirim</Label>
+          <div className="flex flex-wrap gap-1.5 mt-1 mb-2">
+            {QUICK_FEEDBACK_TEMPLATES.map((text) => (
+              <button
+                key={text}
+                type="button"
+                onClick={() => addQuickFeedback(text)}
+                className="text-xs px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
+              >
+                {text}
+              </button>
+            ))}
+          </div>
           <Textarea
             id={`feedback-${submission.id}`}
             value={feedback}

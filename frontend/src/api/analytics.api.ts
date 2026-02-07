@@ -91,6 +91,13 @@ export interface StudentPortfolio {
     attendanceRate: number;
     absenceRate: number;
   };
+  /** Başarı ısı haritası (radar): Kelime, Dilbilgisi, Dinleme, Konuşma (0-100) */
+  skillScores?: {
+    vocabulary: number;
+    grammar: number;
+    listening: number;
+    speaking: number;
+  };
 }
 
 export interface StudentsProgressItem {

@@ -125,7 +125,30 @@ export class StudentService {
     return assignment;
   }
 
+  async getConsent(userId: string): Promise<{ accepted: boolean; acceptedAt?: Date }> {
+    const consent = await prisma.userConsent.findUnique({
+      where: { userId },
+    });
+    return consent ? { accepted: true, acceptedAt: consent.acceptedAt } : { accepted: false };
+  }
+
+  async recordConsent(userId: string) {
+    return prisma.userConsent.upsert({
+      where: { userId },
+      create: { userId },
+      update: {},
+    });
+  }
+
   async submitAssignment(data: SubmissionInput, studentId: string) {
+    const consent = await this.getConsent(studentId);
+    if (!consent.accepted) {
+      throw createError(
+        'Ödev teslim edebilmek için lütfen önce KVKK ve kurum kurallarını kabul edin. Profil veya ana sayfadaki onay kutusunu işaretleyin.',
+        403
+      );
+    }
+
     const student = await prisma.student.findUnique({
       where: { userId: studentId },
     });

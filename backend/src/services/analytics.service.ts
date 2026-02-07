@@ -349,6 +349,7 @@ export class AnalyticsService {
       include: {
         user: { select: { name: true, email: true } },
         class: { include: { level: true } },
+        skillScore: true,
         submissions: {
           include: {
             assignment: { select: { title: true, weekNumber: true } },
@@ -398,6 +399,21 @@ export class AnalyticsService {
     const attendanceRate = totalSessions > 0 ? (attendedCount / totalSessions) * 100 : 100;
     const absenceRate = 100 - attendanceRate;
 
+    const fallbackScore = Math.min(100, Math.max(0, Math.round(avgScore ?? 50)));
+    const skillScores = student.skillScore
+      ? {
+          vocabulary: Math.min(100, Math.max(0, student.skillScore.vocabulary)),
+          grammar: Math.min(100, Math.max(0, student.skillScore.grammar)),
+          listening: Math.min(100, Math.max(0, student.skillScore.listening)),
+          speaking: Math.min(100, Math.max(0, student.skillScore.speaking)),
+        }
+      : {
+          vocabulary: fallbackScore,
+          grammar: fallbackScore,
+          listening: fallbackScore,
+          speaking: fallbackScore,
+        };
+
     return {
       student: {
         id: student.id,
@@ -417,6 +433,7 @@ export class AnalyticsService {
         attendanceRate: Math.round(attendanceRate * 100) / 100,
         absenceRate: Math.round(absenceRate * 100) / 100,
       },
+      skillScores,
     };
   }
 

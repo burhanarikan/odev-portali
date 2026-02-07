@@ -21,9 +21,13 @@ import { PeerReviewPage } from '@/pages/PeerReviewPage';
 import { TimelinePage } from '@/pages/TimelinePage';
 import { ErrorBankPage } from '@/pages/ErrorBankPage';
 import { TeacherResourcesPage } from '@/pages/TeacherResourcesPage';
+import { TeacherWikiList, TeacherWikiDetailPage } from '@/pages/TeacherWikiPage';
 import { InterventionPage } from '@/pages/InterventionPage';
+import { MakeUpPage } from '@/pages/MakeUpPage';
 import { NotFound } from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole?: string | string[] }) {
   const { isAuthenticated, user } = useAuthStore();
@@ -51,7 +55,7 @@ function App() {
   const { isAuthenticated, user } = useAuthStore();
 
   return (
-    <>
+    <ThemeProvider>
       <Routes>
         <Route path="/login" element={
           isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
@@ -159,6 +163,14 @@ function App() {
           <Route index element={<PortfolioPage />} />
         </Route>
 
+        <Route path="/makeup" element={
+          <ProtectedRoute allowedRole="STUDENT">
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<MakeUpPage />} />
+        </Route>
+
         <Route path="/peer-review" element={
           <ProtectedRoute allowedRole="STUDENT">
             <Layout />
@@ -191,6 +203,15 @@ function App() {
           <Route index element={<TeacherResourcesPage />} />
         </Route>
 
+        <Route path="/teacher-wiki" element={
+          <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<TeacherWikiList />} />
+          <Route path=":id" element={<TeacherWikiDetailPage />} />
+        </Route>
+
         <Route path="/intervention" element={
           <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
             <Layout />
@@ -211,7 +232,8 @@ function App() {
       </Routes>
       
       <Toaster />
-    </>
+      <SonnerToaster position="top-right" richColors closeButton />
+    </ThemeProvider>
   );
 }
 

@@ -7,11 +7,13 @@ const attendanceService = new AttendanceService();
 export const startSession = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-    const { classId, durationMinutes, latitude, longitude } = req.body as {
+    const { classId, durationMinutes, latitude, longitude, topic, resourceLinks } = req.body as {
       classId: string;
       durationMinutes?: number;
       latitude?: number;
       longitude?: number;
+      topic?: string;
+      resourceLinks?: string[];
     };
     if (!classId) return res.status(400).json({ error: 'classId gerekli' });
     const session = await attendanceService.startSession(
@@ -19,7 +21,9 @@ export const startSession = async (req: Request, res: Response, next: NextFuncti
       classId,
       durationMinutes ?? 15,
       latitude,
-      longitude
+      longitude,
+      topic,
+      resourceLinks
     );
     res.status(201).json(session);
   } catch (e) {

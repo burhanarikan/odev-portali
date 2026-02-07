@@ -40,6 +40,8 @@ export const attendanceApi = {
     durationMinutes?: number;
     latitude?: number;
     longitude?: number;
+    topic?: string;
+    resourceLinks?: string[];
   }) => {
     const res = await api.post<AttendanceSession>('/attendance/start', data);
     return res.data;

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AssignmentService } from '../services/assignment.service';
 import { EvaluationService } from '../services/evaluation.service';
 import { HomeworkService } from '../services/homework.service';
+import { MakeUpService } from '../services/makeUp.service';
 import { assignmentSchema, assignmentUpdateSchema, evaluationSchema, homeworkSchema } from '../utils/validators';
 import { errorHandler, AppError } from '../middleware/errorHandler';
 import { prisma } from '../config/database';
@@ -9,6 +10,7 @@ import { prisma } from '../config/database';
 const assignmentService = new AssignmentService();
 const evaluationService = new EvaluationService();
 const homeworkService = new HomeworkService();
+const makeUpService = new MakeUpService();
 
 export const createAssignment = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -313,6 +315,43 @@ export const submitEvaluation = async (req: Request, res: Response, next: NextFu
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     const result = await evaluationService.submitEvaluation(submissionId ?? '', validated, req.user.userId);
     res.json(result);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const createMakeUpSlot = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { classId, slotStart, slotEnd, title, maxStudents } = req.body as {
+      classId: string;
+      slotStart: string;
+      slotEnd: string;
+      title?: string;
+      maxStudents?: number;
+    };
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!classId || !slotStart || !slotEnd) {
+      return res.status(400).json({ error: 'classId, slotStart ve slotEnd gerekli' });
+    }
+    const slot = await makeUpService.createSlot(
+      req.user.userId,
+      classId,
+      new Date(slotStart),
+      new Date(slotEnd),
+      title,
+      maxStudents ?? 10
+    );
+    res.status(201).json(slot);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const getMyMakeUpSlots = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const slots = await makeUpService.getSlotsForTeacher(req.user.userId);
+    res.json(slots);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
   }

@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTeacherSubmissions } from '@/hooks/useAssignments';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { FileText } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 
 export const SubmissionsPage = () => {
@@ -10,9 +11,16 @@ export const SubmissionsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[280px] gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
-        <p className="text-sm text-gray-500">Teslimler yükleniyor…</p>
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-40 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
       </div>
     );
   }

@@ -1,12 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { StudentService } from '../services/student.service';
 import { AnalyticsService } from '../services/analytics.service';
+import { AttendanceService } from '../services/attendance.service';
+import { MakeUpService } from '../services/makeUp.service';
 import { submissionSchema } from '../utils/validators';
 import { errorHandler, AppError } from '../middleware/errorHandler';
 import { prisma } from '../config/database';
 
 const studentService = new StudentService();
 const analyticsService = new AnalyticsService();
+const attendanceService = new AttendanceService();
+const makeUpService = new MakeUpService();
 
 export const getAssignments = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -71,6 +75,67 @@ export const getMyPortfolio = async (req: Request, res: Response, next: NextFunc
     if (!student) return res.status(404).json({ error: 'Öğrenci kaydı bulunamadı' });
     const portfolio = await analyticsService.getStudentPortfolio(student.id);
     res.json(portfolio);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const getConsent = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const consent = await studentService.getConsent(req.user.userId);
+    res.json(consent);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const recordConsent = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const consent = await studentService.recordConsent(req.user.userId);
+    res.status(201).json({ accepted: true, acceptedAt: consent.acceptedAt });
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const getMissedSessions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const list = await attendanceService.getMissedSessionsForStudent(req.user.userId);
+    res.json(list);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const getAvailableMakeUpSlots = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const slots = await makeUpService.getAvailableSlotsForStudent(req.user.userId);
+    res.json(slots);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const getMyMakeUpBookings = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const bookings = await makeUpService.getMyBookings(req.user.userId);
+    res.json(bookings);
+  } catch (error: unknown) {
+    errorHandler(error as AppError, req, res, next);
+  }
+};
+
+export const bookMakeUpSlot = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { slotId } = req.params;
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const booking = await makeUpService.bookSlot(req.user.userId, slotId ?? '');
+    res.status(201).json(booking);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
   }

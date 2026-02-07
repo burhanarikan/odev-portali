@@ -1,20 +1,65 @@
 import { useStudentAssignments } from '@/hooks/useAssignments';
+import { useConsent } from '@/hooks/useConsent';
+import { useConsentStore } from '@/store/consentStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDate, isOverdue, isStarted } from '@/utils/formatDate';
-import { Calendar, Clock, FileText, CheckCircle, ClipboardList } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { formatDate, isOverdue, isStarted, timeUntil } from '@/utils/formatDate';
+import { Calendar, Clock, FileText, CheckCircle, ClipboardList, LogIn, ChevronRight, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
+/** Dairesel ilerleme (0-100) */
+function CircularProgress({ value, size = 48, strokeWidth = 4 }: { value: number; size?: number; strokeWidth?: number }) {
+  const r = (size - strokeWidth) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (Math.min(100, Math.max(0, value)) / 100) * circ;
+  return (
+    <svg width={size} height={size} className="flex-shrink-0" aria-hidden>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e5e7eb" strokeWidth={strokeWidth} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="#3b82f6"
+        strokeWidth={strokeWidth}
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="transition-[stroke-dashoffset] duration-500"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+    </svg>
+  );
+}
+
 export const StudentDashboard = () => {
   const { data: assignments, isLoading, error } = useStudentAssignments();
+  const { accepted: consentAccepted } = useConsent();
+  const setConsentModalOpen = useConsentStore((s) => s.setConsentModalOpen);
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[320px] gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
-        <p className="text-sm text-gray-500">Ödevler yükleniyor…</p>
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Skeleton className="h-32 rounded-lg" />
+          <Skeleton className="h-32 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-24 rounded-lg" />
+          <Skeleton className="h-24 rounded-lg" />
+          <Skeleton className="h-24 rounded-lg" />
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <p className="text-sm text-gray-500">Ödevler yükleniyor…</p>
+        </div>
       </div>
     );
   }
@@ -56,6 +101,10 @@ export const StudentDashboard = () => {
   const totalSubmitted = submittedCount + pastSubmittedCount;
   const pendingCount = activeCount - submittedCount;
 
+  const nextAssignment = assignments?.active
+    ?.filter((a) => !a.submissions?.length)
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+
   return (
     <div className="space-y-6">
       <div>
@@ -63,7 +112,70 @@ export const StudentDashboard = () => {
         <p className="text-gray-600">Ödevlerinizi görüntüleyin ve teslim edin</p>
       </div>
 
-      {/* Ödev durumum özeti */}
+      {!consentAccepted && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-600 flex-shrink-0" />
+              <p className="text-sm text-amber-800">
+                Ödev teslim edebilmek için KVKK ve kurum kurallarını kabul etmeniz gerekiyor.
+              </p>
+            </div>
+            <Button onClick={() => setConsentModalOpen(true)} variant="outline" size="sm" className="border-amber-400 text-amber-800">
+              Kabul et
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Zero-Click: Şimdi ne yapmalıyım? */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {nextAssignment ? (
+          <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Sıradaki ödev
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xl font-bold text-gray-900">{nextAssignment.title}</p>
+              <p className="text-sm text-gray-600">
+                Son teslim: {formatDate(nextAssignment.dueDate)} · {timeUntil(nextAssignment.dueDate)} kaldı
+              </p>
+              <Button asChild className="w-full md:w-auto">
+                <Link to={`/assignments/${nextAssignment.id}`}>
+                  Ödeve git <ChevronRight className="h-4 w-4 ml-1 inline" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border border-green-200 bg-green-50/50">
+            <CardContent className="py-6 text-center">
+              <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-2" />
+              <p className="font-medium text-green-800">Tüm aktif ödevler tamamlandı</p>
+              <p className="text-sm text-green-700 mt-1">Yeni ödev atandığında burada görünecek.</p>
+            </CardContent>
+          </Card>
+        )}
+        <Card className="border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-amber-800 flex items-center gap-2">
+              <LogIn className="h-4 w-4" />
+              Bugünkü ders / Yoklama
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-gray-700">Hoca tahtada paylaştığı yoklama kodunu girin ve derse katılın.</p>
+            <Button asChild variant="outline" className="w-full md:w-auto border-amber-300 text-amber-800 hover:bg-amber-100">
+              <Link to="/attendance/join">Derse katıl</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Ödev durumum özeti + dairesel ilerleme */}
       <Card className="border-blue-100 bg-blue-50/30">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -72,21 +184,32 @@ export const StudentDashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4 items-baseline">
-            <span className="text-2xl font-bold text-gray-900">{totalSubmitted} tamamlandı</span>
-            <span className="text-gray-600">/ toplam {totalDue} verilen ödev</span>
+          <div className="flex flex-wrap items-center gap-6">
             {totalDue > 0 && (
-              <Badge variant={totalSubmitted >= totalDue ? 'default' : totalSubmitted / totalDue >= 0.5 ? 'secondary' : 'destructive'}>
-                %{Math.round((totalSubmitted / totalDue) * 100)} tamamlama
-              </Badge>
+              <div className="flex items-center gap-3">
+                <CircularProgress value={(totalSubmitted / totalDue) * 100} size={56} strokeWidth={5} />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{totalSubmitted} / {totalDue}</p>
+                  <p className="text-xs text-gray-600">tamamlanan ödev</p>
+                </div>
+              </div>
             )}
-            {pendingCount > 0 && (
-              <span className="text-amber-700 text-sm font-medium">
-                · {pendingCount} yapılmadı
-              </span>
-            )}
+            <div className="flex flex-wrap gap-4 items-baseline">
+              <span className="text-xl font-bold text-gray-900">{totalSubmitted} tamamlandı</span>
+              <span className="text-gray-600">/ toplam {totalDue} verilen ödev</span>
+              {totalDue > 0 && (
+                <Badge variant={totalSubmitted >= totalDue ? 'default' : totalSubmitted / totalDue >= 0.5 ? 'secondary' : 'destructive'}>
+                  %{Math.round((totalSubmitted / totalDue) * 100)} tamamlama
+                </Badge>
+              )}
+              {pendingCount > 0 && (
+                <span className="text-amber-700 text-sm font-medium">
+                  · {pendingCount} yapılmadı
+                </span>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-2">
             Tamamlandı / yapılmadı durumu · Kur sonu özeti
           </p>
         </CardContent>

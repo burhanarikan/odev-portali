@@ -1,21 +1,55 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { attendanceApi } from '@/api/attendance.api';
 import { Loader2, LogIn, MapPin, AlertCircle } from 'lucide-react';
 
+const CODE_LENGTH = 6;
+
 export const AttendanceJoinPage = () => {
   const { toast } = useToast();
-  const [code, setCode] = useState('');
+  const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const code = digits.join('');
+
+  const focusInput = (index: number) => {
+    inputRefs.current[index]?.focus();
+  };
+
+  const handleDigitChange = (index: number, value: string) => {
+    const num = value.replace(/\D/g, '').slice(-1);
+    const next = [...digits];
+    next[index] = num;
+    setDigits(next);
+    if (num && index < CODE_LENGTH - 1) focusInput(index + 1);
+    else if (!num && index > 0) focusInput(index - 1);
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !digits[index] && index > 0) {
+      focusInput(index - 1);
+      const next = [...digits];
+      next[index - 1] = '';
+      setDigits(next);
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, CODE_LENGTH);
+    const next = pasted.split('').concat(Array(CODE_LENGTH).fill('')).slice(0, CODE_LENGTH);
+    setDigits(next);
+    const lastIdx = Math.min(pasted.length, CODE_LENGTH) - 1;
+    focusInput(lastIdx);
+  };
 
   const handleJoin = async () => {
     const trimmed = code.trim();
-    if (!trimmed) {
-      toast({ title: 'Kod girin', variant: 'destructive' });
+    if (trimmed.length < 4) {
+      toast({ title: 'En az 4 haneli kod girin', variant: 'destructive' });
       return;
     }
     setLoading(true);
@@ -30,7 +64,7 @@ export const AttendanceJoinPage = () => {
     } catch {
       toast({
         title: 'Konum alınamadı',
-        description: 'Yoklamaya katılmak için konum izni verin. Konum verilmezse kayıt "Konum bilgisi paylaşılmadı" olarak loglanır.',
+        description: 'Derste olduğunuzu doğrulamak için konum izni gereklidir. İzin vermezseniz kayıt "Konum paylaşılmadı" olarak loglanır.',
         variant: 'destructive',
       });
     }
@@ -45,18 +79,19 @@ export const AttendanceJoinPage = () => {
           title: 'Katıldınız',
           description: result.message,
         });
-        setCode('');
+        setDigits(Array(CODE_LENGTH).fill(''));
+        focusInput(0);
       } else {
         toast({
           title: 'Katılım başarısız',
-          description: result.message,
+          description: 'Girdiğiniz kod hatalı veya süresi dolmuş. Lütfen hocanızdan yeni kod isteyin.',
           variant: 'destructive',
         });
       }
     } catch (e) {
       toast({
-        title: 'Hata',
-        description: (e as Error).message,
+        title: 'Katılım başarısız',
+        description: 'Girdiğiniz kod hatalı veya süresi dolmuş. Lütfen hocanızdan yeni kod isteyin.',
         variant: 'destructive',
       });
     } finally {
@@ -65,7 +100,7 @@ export const AttendanceJoinPage = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto py-8">
+    <div className="max-w-md mx-auto py-6 px-4 sm:py-8">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -73,29 +108,40 @@ export const AttendanceJoinPage = () => {
             Derse Katıl
           </CardTitle>
           <CardDescription>
-            Hocanın söylediği yoklama kodunu girin. Konum izni verirseniz sınıf içinde olduğunuz doğrulanır (50m).
+            Hocanın tahtada paylaştığı 6 haneli yoklama kodunu girin.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="code">Yoklama kodu</Label>
-            <Input
-              id="code"
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="Örn: 123456"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className="text-center text-2xl font-mono tracking-widest"
-            />
+            <p className="text-sm font-medium text-gray-700">Yoklama kodu</p>
+            <div
+              className="flex justify-center gap-2 sm:gap-3"
+              onPaste={handlePaste}
+            >
+              {digits.map((d, i) => (
+                <input
+                  key={i}
+                  ref={(el) => { inputRefs.current[i] = el; }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={d}
+                  onChange={(e) => handleDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(i, e)}
+                  className="w-11 h-12 sm:w-12 sm:h-14 text-center text-2xl font-mono font-semibold border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                  aria-label={`Rakam ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <MapPin className="h-4 w-4" />
-            <span>Konum izni vererek sınıf içi doğrulama yapılır</span>
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-sm">
+            <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <p>
+              Derste olduğunuzu doğrulamak için konum izni gereklidir. İzin vermezseniz katılım kaydınız &quot;Konum paylaşılmadı&quot; olarak işaretlenir.
+            </p>
           </div>
           <Button
-            className="w-full"
+            className="w-full h-12 text-base"
             onClick={handleJoin}
             disabled={loading || code.length < 4}
           >
@@ -105,7 +151,7 @@ export const AttendanceJoinPage = () => {
           <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
             <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
             <p>
-              Süre dolmuş veya yanlış kod girerseniz katılım kabul edilmez. Aynı kodla sadece bir kez katılabilirsiniz.
+              Yanlış veya süresi dolmuş kod girerseniz katılım kabul edilmez. Lütfen hocanızdan güncel kodu isteyin. Aynı kodla sadece bir kez katılabilirsiniz.
             </p>
           </div>
         </CardContent>

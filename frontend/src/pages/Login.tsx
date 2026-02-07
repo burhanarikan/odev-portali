@@ -9,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLogin, useRegister } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Moon, Sun } from 'lucide-react';
 import { pingBackendHealth, getBaseURL } from '@/api/client';
+import { useThemeStore } from '@/store/themeStore';
 
 const loginSchema = z.object({
   email: z.string().email('Geçerli bir e-posta adresi girin'),
@@ -38,6 +39,7 @@ export const Login = () => {
   const { toast } = useToast();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
+  const { effective, toggle } = useThemeStore();
 
   useEffect(() => {
     if (isDev) return;
@@ -95,12 +97,12 @@ export const Login = () => {
 
   if (!backendReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 pb-8 text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="font-medium text-gray-900">Sunucuya bağlanılıyor</p>
-            <p className="text-sm text-gray-500 mt-1">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="font-medium text-foreground">Sunucuya bağlanılıyor</p>
+            <p className="text-sm text-muted-foreground mt-1">
               İlk açılışta 1–2 dakika sürebilir. Form hazır olunca otomatik açılacak.
             </p>
           </CardContent>
@@ -110,7 +112,13 @@ export const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col bg-background">
+      <div className="absolute top-4 right-4">
+        <Button variant="ghost" size="icon" onClick={toggle} className="rounded-full" aria-label={effective === 'dark' ? 'Açık tema' : 'Koyu tema'}>
+          {effective === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
+      </div>
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
@@ -291,6 +299,7 @@ export const Login = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

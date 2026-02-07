@@ -27,3 +27,11 @@ export const isStarted = (startDate: string | Date) => {
   const start = typeof startDate === 'string' ? parseISO(startDate) : startDate;
   return start <= new Date();
 };
+
+/** "3 gün kaldı" veya "Yarın" benzeri kısa süre metni */
+export const timeUntil = (dueDate: string | Date) => {
+  const due = typeof dueDate === 'string' ? parseISO(dueDate) : dueDate;
+  const now = new Date();
+  if (due < now) return 'Süresi geçti';
+  return formatDistanceToNow(due, { addSuffix: false, locale: tr });
+};

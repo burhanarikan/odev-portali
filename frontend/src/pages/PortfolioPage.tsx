@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { studentApi } from '@/api/student.api';
 import { useAuthStore } from '@/store/authStore';
-import { Loader2, BookOpen, FileText } from 'lucide-react';
+import { Loader2, BookOpen, FileText, Radar } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
+import { SkillRadarChart } from '@/components/charts/SkillRadarChart';
 
 export const PortfolioPage = () => {
   const { user } = useAuthStore();
@@ -42,7 +43,7 @@ export const PortfolioPage = () => {
     );
   }
 
-  const { student, evaluations, summary } = portfolio;
+  const { student, evaluations, summary, skillScores } = portfolio;
 
   return (
     <div className="space-y-6">
@@ -50,6 +51,23 @@ export const PortfolioPage = () => {
         <h1 className="text-2xl font-bold text-gray-900">Öğrenim Yolculuğum</h1>
         <p className="text-gray-600">Ödev notları, devamsızlık ve geri bildirimler</p>
       </div>
+
+      {skillScores && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Radar className="h-5 w-5" />
+              Başarı ısı haritası
+            </CardTitle>
+            <CardDescription>
+              Kelime, dilbilgisi, dinleme ve konuşma alanlarındaki gelişim özeti (0–100)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <SkillRadarChart skillScores={skillScores} size={260} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

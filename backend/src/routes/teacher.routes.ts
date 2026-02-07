@@ -22,6 +22,8 @@ import {
   getHomeworkById,
   updateHomework,
   deleteHomework,
+  createMakeUpSlot,
+  getMyMakeUpSlots,
 } from '../controllers/teacher.controller';
 import { authenticate, authorize } from '../middleware/auth';
 
@@ -54,5 +56,9 @@ router.post('/groups', createGroup);
 router.post('/groups/:groupId/students', addStudentToGroup);
 router.delete('/groups/:groupId/students/:studentId', removeStudentFromGroup);
 router.get('/assignments/:id/groups', getGroups);
+
+// Telafi dersi slotları
+router.get('/makeup-slots', getMyMakeUpSlots);
+router.post('/makeup-slots', createMakeUpSlot);
 
 export default router;

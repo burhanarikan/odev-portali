@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,10 +7,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSubmitAssignment } from '@/hooks/useAssignments';
+import { useConsent } from '@/hooks/useConsent';
+import { useConsentStore } from '@/store/consentStore';
 import { useToast } from '@/components/ui/use-toast';
 import { uploadApi } from '@/api/upload.api';
-import { Upload, X, FileText, Mic, Square, Loader2 } from 'lucide-react';
+import { Upload, X, FileText, Mic, Square, Loader2, ShieldAlert, RotateCcw, Play } from 'lucide-react';
 import { AudioPlayer } from '@/components/ui/audio-player';
+import { AudioLevelVisualizer } from '@/components/student/AudioLevelVisualizer';
 
 const submissionSchema = z.object({
   contentText: z.string().optional(),
@@ -18,6 +21,53 @@ const submissionSchema = z.object({
 });
 
 type SubmissionFormData = z.infer<typeof submissionSchema>;
+
+/** Kayıt sonrası: dinle, yeniden kaydet veya bu kaydı kullan. Object URL revoke ile sızıntı önlenir. */
+function RecordedPreview({
+  blob,
+  onRetake,
+  onUse,
+  uploading,
+}: {
+  blob: Blob;
+  onRetake: () => void;
+  onUse: () => void;
+  uploading: boolean;
+}) {
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const url = URL.createObjectURL(blob);
+    setObjectUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [blob]);
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
+        <Play className="h-4 w-4" />
+        Önce dinle, beğenmezsen yeniden kaydet
+      </p>
+      {objectUrl && (
+        <audio
+          controls
+          src={objectUrl}
+          className="w-full max-w-full h-10"
+        />
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={onRetake} className="gap-1">
+          <RotateCcw className="h-4 w-4" />
+          Yeniden kaydet
+        </Button>
+        <Button type="button" variant="secondary" size="sm" disabled={uploading} onClick={onUse}>
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Bu kaydı kullan'}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 interface SubmissionFormProps {
   assignmentId: string;
@@ -30,10 +80,13 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
   const [recording, setRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const submitMutation = useSubmitAssignment();
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const { accepted: consentAccepted } = useConsent();
+  const setConsentModalOpen = useConsentStore((s) => s.setConsentModalOpen);
 
   const form = useForm<SubmissionFormData>({
     resolver: zodResolver(submissionSchema),
@@ -70,6 +123,7 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const recorder = new MediaRecorder(stream);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => {
@@ -77,6 +131,7 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
       };
       recorder.onstop = () => {
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         setRecordedBlob(blob);
       };
@@ -146,17 +201,31 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
       setFileUrls([]);
       setAudioUrl(null);
       setRecordedBlob(null);
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { error?: string } }; message?: string };
+      const message = err.response?.data?.error || err.message || 'Ödev teslim edilirken bir hata oluştu.';
       toast({
         title: 'Hata',
-        description: 'Ödev teslim edilirken bir hata oluştu.',
+        description: message,
         variant: 'destructive',
       });
+      if (err.response?.status === 403) setConsentModalOpen(true);
     }
   };
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      {!consentAccepted && (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          <ShieldAlert className="h-4 w-4 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium">Ödev teslim edebilmek için KVKK ve kurum kurallarını kabul etmeniz gerekiyor.</p>
+            <Button type="button" variant="outline" size="sm" className="mt-2 border-amber-400 text-amber-800" onClick={() => setConsentModalOpen(true)}>
+              KVKK ve kuralları kabul et
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor="contentText">Ödev Metni</Label>
         <Textarea
@@ -226,29 +295,46 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
               </Button>
             )}
             {recording && (
-              <Button type="button" variant="destructive" onClick={stopRecording} className="gap-2">
-                <Square className="h-4 w-4" />
-                Durdur
-              </Button>
-            )}
-            {recordedBlob && !audioUrl && (
-              <div className="flex flex-wrap items-center gap-2">
-                <audio controls src={URL.createObjectURL(recordedBlob)} className="max-w-full" />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={uploading}
-                  onClick={uploadRecordedAudio}
-                >
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Yükle'}
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 flex items-center gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-red-500 animate-pulse" aria-hidden />
+                  Kaydediliyor… Sesinizin gittiğini aşağıdaki çubuklardan takip edebilirsiniz.
+                </p>
+                <div className="flex justify-center bg-gray-100 rounded-lg py-2">
+                  {streamRef.current && (
+                    <AudioLevelVisualizer stream={streamRef.current} className="rounded" />
+                  )}
+                </div>
+                <Button type="button" variant="destructive" onClick={stopRecording} className="gap-2 w-full sm:w-auto">
+                  <Square className="h-4 w-4" />
+                  Kaydı Durdur
                 </Button>
               </div>
             )}
+            {recordedBlob && !audioUrl && (
+              <RecordedPreview
+                blob={recordedBlob}
+                onRetake={() => setRecordedBlob(null)}
+                onUse={uploadRecordedAudio}
+                uploading={uploading}
+              />
+            )}
             {audioUrl && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-green-600">Ses yüklendi.</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-green-600 font-medium">Ses eklendi.</span>
                 <AudioPlayer src={audioUrl} showSpeed={true} />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAudioUrl(null);
+                    setRecordedBlob(null);
+                  }}
+                  className="text-gray-600"
+                >
+                  Kaldır
+                </Button>
               </div>
             )}
           </CardContent>
@@ -258,7 +344,7 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
       <Button
         type="submit"
         className="w-full"
-        disabled={submitMutation.isPending || uploading}
+        disabled={!consentAccepted || submitMutation.isPending || uploading}
       >
         {submitMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         Ödevi Teslim Et

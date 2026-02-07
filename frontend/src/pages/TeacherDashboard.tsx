@@ -1,10 +1,11 @@
-import { useTeacherAssignments } from '@/hooks/useAssignments';
+import { useTeacherAssignments, useTeacherSubmissions } from '@/hooks/useAssignments';
 import { useAuthStore } from '@/store/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate, isOverdue } from '@/utils/formatDate';
-import { Calendar, Clock, FileText, Users, Plus, User, Mic, Upload, Layers } from 'lucide-react';
+import { Calendar, Clock, FileText, Users, Plus, User, Mic, Upload, Layers, Inbox, ClipboardCheck, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -12,12 +13,29 @@ export const TeacherDashboard = () => {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
   const { data: assignments, isLoading, error } = useTeacherAssignments();
+  const { data: submissions = [] } = useTeacherSubmissions();
+  const pendingGrading = submissions.filter((s) => !s.evaluation).slice(0, 5);
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[320px] gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
-        <p className="text-sm text-gray-500">Ödevler yükleniyor…</p>
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-56 mb-2" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Skeleton className="h-28 rounded-lg" />
+          <Skeleton className="h-28 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <p className="text-sm text-gray-500">Yükleniyor…</p>
+        </div>
       </div>
     );
   }
@@ -70,6 +88,55 @@ export const TeacherDashboard = () => {
           </Link>
         )}
       </div>
+
+      {/* Zero-Click: Yapmanız gerekenler */}
+      {!isAdmin && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-amber-800 flex items-center gap-2">
+                <Inbox className="h-4 w-4" />
+                Kontrol edilmeyi bekleyen ödevler
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {pendingGrading.length > 0 ? (
+                <>
+                  <p className="text-lg font-bold text-gray-900">{pendingGrading.length} teslim değerlendirme bekliyor</p>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    {pendingGrading.map((s) => (
+                      <li key={s.id}>
+                        <Link to={`/assignments/${s.assignmentId}`} className="text-blue-600 hover:underline">
+                          {s.assignment.title} · {s.student?.user?.name ?? '—'}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button asChild variant="outline" size="sm" className="border-amber-300 text-amber-800">
+                    <Link to="/submissions">Tümünü gör <ChevronRight className="h-4 w-4 ml-1" /></Link>
+                  </Button>
+                </>
+              ) : (
+                <p className="text-gray-600">Bekleyen teslim yok.</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4" />
+                Yoklama
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-gray-700">Sınıf için yoklama başlatın veya canlı katılımı takip edin.</p>
+              <Button asChild variant="outline" size="sm" className="border-blue-300 text-blue-800">
+                <Link to="/attendance">Yoklama sayfası</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
