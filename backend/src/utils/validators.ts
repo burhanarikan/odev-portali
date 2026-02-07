@@ -53,20 +53,46 @@ const assignmentFields = z.object({
   peerReviewsPerStudent: z.number().int().min(1).max(5).optional(),
 });
 
-export const assignmentSchema = assignmentFields.refine(
-  (d) => d.homeworkId || (d.title && d.levelId && d.weekNumber != null),
-  { message: 'homeworkId verin veya title, levelId ve weekNumber verin' }
+export const assignmentSchema = assignmentFields
+  .refine(
+    (d) => d.homeworkId || (d.title && d.levelId && d.weekNumber != null),
+    { message: 'homeworkId verin veya title, levelId ve weekNumber verin' }
+  )
+  .refine(
+    (d) => {
+      const start = new Date(d.startDate);
+      const due = new Date(d.dueDate);
+      return start.getTime() < due.getTime();
+    },
+    { message: 'Başlangıç tarihi bitiş tarihinden önce olmalıdır.' }
+  );
+
+export const assignmentUpdateSchema = assignmentFields.partial().refine(
+  (d) => {
+    if (!d.startDate || !d.dueDate) return true;
+    return new Date(d.startDate).getTime() < new Date(d.dueDate).getTime();
+  },
+  { message: 'Başlangıç tarihi bitiş tarihinden önce olmalıdır.' }
 );
 
-export const assignmentUpdateSchema = assignmentFields.partial();
-
-export const submissionSchema = z.object({
-  assignmentId: z.string().uuid(),
-  contentText: z.string().optional(),
-  attachments: z.array(z.string()).default([]),
-  audioUrl: z.string().url().optional().or(z.literal('')),
-  fileUrl: z.string().url().optional().or(z.literal('')),
-});
+export const submissionSchema = z
+  .object({
+    assignmentId: z.string().uuid('Geçersiz ödev kimliği'),
+    contentText: z.string().optional(),
+    attachments: z.array(z.string()).default([]),
+    audioUrl: z.string().url().optional().or(z.literal('')),
+    fileUrl: z.string().url().optional().or(z.literal('')),
+  })
+  .refine(
+    (d) => {
+      const hasText = (d.contentText ?? '').trim().length > 0;
+      const hasAttachments = (d.attachments ?? []).length > 0;
+      const hasAudio = !!d.audioUrl && d.audioUrl !== '';
+      const hasFile = !!d.fileUrl && d.fileUrl !== '';
+      return hasText || hasAttachments || hasAudio || hasFile;
+    },
+    { message: 'En az bir teslim içeriği gerekli: metin, dosya veya ses kaydı ekleyin.' }
+  );
 
 export const evaluationSchema = z.object({
   score: z.number().min(0).max(100).optional(),

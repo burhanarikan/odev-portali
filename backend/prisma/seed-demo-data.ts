@@ -154,7 +154,7 @@ export const ANNOUNCEMENT_TITLES = [
   'Sertifika dağıtımı',
 ];
 
-/** Zaman tüneli özet metinleri (hoca paylaşımı). */
+/** Zaman tüneli özet metinleri (hoca paylaşımı, duyurular, sınav sonuçları, uyarılar). */
 export const TIMELINE_SUMMARIES = [
   'Bugün geçmiş zaman (-di, -miş) işlendi. Ev ödevi: sayfa 24-25.',
   'Konuşma: günlük rutin. Haftaya dinleme sınavı.',
@@ -162,7 +162,7 @@ export const TIMELINE_SUMMARIES = [
   'Dil bilgisi: gelecek zaman. Alıştırma defteri tamamlanacak.',
   'Kelime: alışveriş ve sayılar. Tekrar edin.',
   'Sınav haftası. Dersler normal; Cuma sınav.',
-  'Sınav sonuçları görüşüldü. Eksikler için ek materyal paylaşıldı.',
+  'Sınav sonuçları açıklandı. Eksikler için ek materyal paylaşıldı.',
   'Konuşma kulübü: Türkçe film fragmanı izlendi.',
   'Yazma: resmi e-posta formatı. Örnekler Canvas\'ta.',
   'Dinleme: haber bülteni. Not alma alıştırması.',
@@ -176,6 +176,9 @@ export const TIMELINE_SUMMARIES = [
   'Kur sonu genel tekrar. Sınav formatı anlatıldı.',
   'Sertifika töreni provası. Cuma 14:00.',
   'B1 dönemi tamamlandı. Hepinize teşekkürler.',
+  'Hatırlatma: Devamsızlık yapan öğrenciler telafi için ofis saatlerine gelebilir.',
+  'Ara sınav sonuçları sisteme işlendi. Düşük puanlı öğrenciler ek çalışma alacak.',
+  'Ödev teslim tarihi geçenler için son ödeme: bu Cuma.',
 ];
 
 /** Hata bankası örnek cümleler (grammar/vocabulary). */
@@ -197,7 +200,7 @@ export const ERROR_BANK_TEXTS = [
   'Kitabı okudum ama anlamadım.',
 ];
 
-/** Müdahale gerekçeleri. */
+/** Müdahale gerekçeleri (sistem uyarıları: devamsızlık, ödev, akademik risk). */
 export const INTERVENTION_REASONS = [
   '3 haftadır devamsız; iletişime geçildi.',
   'Ödev teslim edilmedi; hatırlatma yapıldı.',
@@ -207,4 +210,7 @@ export const INTERVENTION_REASONS = [
   'Ödev teslim oranı düşük; birebir görüşme.',
   'Sınav notu 50 altı; telafi çalışması.',
   '5 haftadır devamsız; müdahale kaydı.',
+  'Birden fazla ödev teslim edilmedi; uyarı.',
+  'X haftadır devamsız; veli aranacak.',
+  'Akademik risk; devamsızlık ve ödev eksik.',
 ];

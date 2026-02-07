@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -82,6 +83,7 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
   const submitMutation = useSubmitAssignment();
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { accepted: consentAccepted } = useConsent();
   const setConsentModalOpen = useConsentStore((s) => s.setConsentModalOpen);
 
@@ -173,6 +175,12 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
     }
   };
 
+  const hasContent =
+    (form.watch('contentText') ?? '').trim().length > 0 ||
+    fileUrls.length > 0 ||
+    !!audioUrl ||
+    !!recordedBlob;
+
   const onSubmit = async (data: SubmissionFormData) => {
     try {
       let finalAudioUrl: string | null | undefined = audioUrl;
@@ -180,17 +188,26 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
         finalAudioUrl = await uploadRecordedAudio();
       }
       const firstFileUrl = fileUrls[0] || undefined;
-      await submitMutation.mutateAsync({
+      const payload = {
         assignmentId,
-        contentText: data.contentText,
+        contentText: data.contentText?.trim() || undefined,
         attachments: fileUrls.length ? fileUrls : (data.attachments || []),
         audioUrl: finalAudioUrl ?? undefined,
         fileUrl: firstFileUrl ?? undefined,
-      });
+      };
+      if (!payload.contentText && !payload.attachments?.length && !payload.audioUrl && !payload.fileUrl) {
+        toast({
+          title: 'Eksik teslim',
+          description: 'En az bir teslim içeriği gerekli: metin, dosya veya ses kaydı ekleyin.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      await submitMutation.mutateAsync(payload);
 
       toast({
         title: 'Başarılı',
-        description: 'Ödeviniz başarıyla teslim edildi.',
+        description: 'Ödeviniz başarıyla teslim edildi. Ana sayfaya yönlendiriliyorsunuz…',
       });
 
       form.reset();
@@ -198,9 +215,13 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
       setFileUrls([]);
       setAudioUrl(null);
       setRecordedBlob(null);
+      setTimeout(() => navigate('/student', { replace: true }), 1500);
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { error?: string } }; message?: string };
-      const message = err.response?.data?.error || err.message || 'Ödev teslim edilirken bir hata oluştu.';
+      const message =
+        (err.response?.data as { error?: string } | undefined)?.error ||
+        err.message ||
+        'Ödev teslim edilirken bir hata oluştu.';
       toast({
         title: 'Hata',
         description: message,
@@ -338,10 +359,15 @@ export const SubmissionForm = ({ assignmentId }: SubmissionFormProps) => {
         </Card>
       </div>
 
+      {consentAccepted && !hasContent && (
+        <p className="text-sm text-amber-600">
+          Teslim etmek için en az bir içerik ekleyin: metin yazın, dosya yükleyin veya ses kaydı yapın.
+        </p>
+      )}
       <Button
         type="submit"
         className="w-full"
-        disabled={!consentAccepted || submitMutation.isPending || uploading}
+        disabled={!consentAccepted || !hasContent || submitMutation.isPending || uploading}
       >
         {submitMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         Ödevi Teslim Et

@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { formatDate } from '@/utils/formatDate';
 import { FileText, Award, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { PageLoading } from '@/components/feedback/PageLoading';
+import { PageError } from '@/components/feedback/PageError';
 
 type EvaluatedSubmission = {
   id: string;
@@ -24,33 +25,23 @@ type EvaluatedSubmission = {
 };
 
 export const EvaluationsPage = () => {
-  const { data: evaluations = [], isLoading, error } = useStudentEvaluations();
+  const { data: evaluations = [], isLoading, error, refetch } = useStudentEvaluations();
   const list = evaluations as unknown as EvaluatedSubmission[];
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[320px] gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
-        <p className="text-sm text-gray-500">Değerlendirmeler yükleniyor…</p>
-      </div>
-    );
+    return <PageLoading message="Değerlendirmeler yükleniyor…" />;
   }
 
   if (error) {
     const message = (error as Error)?.message || 'Değerlendirmeler yüklenirken bir hata oluştu.';
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-600">{message}</p>
-        <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
-      </div>
-    );
+    return <PageError message={message} onRetry={() => refetch()} />;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Değerlendirmelerim</h1>
-        <p className="text-gray-600">
+        <h1 className="page-title">Değerlendirmelerim</h1>
+        <p className="page-description">
           Öğretmenlerinizin verdiği puan ve geri bildirimler
         </p>
       </div>

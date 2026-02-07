@@ -16,7 +16,7 @@ export class StudentService {
     });
 
     if (!student) {
-      throw createError('Student not found', 404);
+      throw createError('Öğrenci kaydı bulunamadı.', 404);
     }
 
     const now = new Date();
@@ -119,7 +119,7 @@ export class StudentService {
     });
 
     if (!assignment) {
-      throw createError('Assignment not found', 404);
+      throw createError('Ödev bulunamadı.', 404);
     }
 
     return assignment;
@@ -164,7 +164,7 @@ export class StudentService {
     });
 
     if (!student) {
-      throw createError('Student not found', 404);
+      throw createError('Öğrenci kaydı bulunamadı.', 404);
     }
 
     const assignment = await prisma.assignment.findUnique({
@@ -173,11 +173,16 @@ export class StudentService {
     });
 
     if (!assignment) {
-      throw createError('Assignment not found', 404);
+      throw createError('Ödev bulunamadı.', 404);
+    }
+
+    const now = new Date();
+    if (assignment.startDate > now) {
+      throw createError('Bu ödev henüz başlamadı. Teslim tarihi açıldığında tekrar deneyin.', 403);
     }
 
     if (assignment.levelId !== student.class.levelId) {
-      throw createError('Bu ödev sizin seviyenize ait değil', 403);
+      throw createError('Bu ödev sizin seviyenize ait değil.', 403);
     }
     const hasTarget = assignment.targets.length === 0 ||
       assignment.targets.some((t) => t.classId === student.classId || t.studentId === student.id);
@@ -193,10 +198,9 @@ export class StudentService {
     });
 
     if (existingSubmission) {
-      throw createError('Assignment already submitted', 409);
+      throw createError('Bu ödev zaten teslim edildi.', 409);
     }
 
-    const now = new Date();
     const isLate = assignment.dueDate < now;
 
     return prisma.submission.create({
@@ -254,7 +258,7 @@ export class StudentService {
     });
 
     if (!submission) {
-      throw createError('Submission not found', 404);
+      throw createError('Teslim kaydı bulunamadı.', 404);
     }
 
     return submission;

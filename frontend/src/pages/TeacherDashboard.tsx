@@ -12,14 +12,14 @@ import { PageError } from '@/components/feedback/PageError';
 export const TeacherDashboard = () => {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
-  const { data: assignments, isLoading, error } = useTeacherAssignments();
+  const { data: assignments, isLoading, error, refetch } = useTeacherAssignments();
   const { data: submissions = [] } = useTeacherSubmissions();
   const pendingGrading = submissions.filter((s) => !s.evaluation).slice(0, 5);
 
   if (isLoading) return <PageLoading message="Ödevler yükleniyor…" />;
   if (error) {
     const message = (error as Error)?.message || 'Ödevler yüklenirken bir hata oluştu.';
-    return <PageError message={message} onRetry={() => window.location.reload()} />;
+    return <PageError message={message} onRetry={() => refetch()} />;
   }
 
   const totalAssignments = assignments?.length || 0;
@@ -43,10 +43,10 @@ export const TeacherDashboard = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="page-title">
             {isAdmin ? 'Yönetim – Tüm Ödevler' : 'Öğretmen Paneli'}
           </h1>
-          <p className="text-gray-600">
+          <p className="page-description">
             {isAdmin ? 'Hangi hoca ne ödev vermiş; ödev ve teslim takibi' : 'Ödevlerinizi yönetin ve değerlendirin'}
           </p>
         </div>
@@ -73,8 +73,8 @@ export const TeacherDashboard = () => {
             <CardContent className="space-y-3">
               {pendingGrading.length > 0 ? (
                 <>
-                  <p className="text-lg font-bold text-gray-900">{pendingGrading.length} teslim değerlendirme bekliyor</p>
-                  <ul className="space-y-1 text-sm text-gray-600">
+                  <p className="text-lg font-bold text-foreground">{pendingGrading.length} teslim değerlendirme bekliyor</p>
+                  <ul className="space-y-1 text-sm text-muted-foreground">
                     {pendingGrading.map((s) => (
                       <li key={s.id}>
                         <Link to={`/assignments/${s.assignmentId}`} className="text-blue-600 hover:underline">
@@ -88,7 +88,7 @@ export const TeacherDashboard = () => {
                   </Button>
                 </>
               ) : (
-                <p className="text-gray-600">Bekleyen teslim yok.</p>
+                <p className="text-muted-foreground">Bekleyen teslim yok.</p>
               )}
             </CardContent>
           </Card>
@@ -100,7 +100,7 @@ export const TeacherDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-gray-700">Sınıf için yoklama başlatın veya canlı katılımı takip edin.</p>
+              <p className="text-muted-foreground">Sınıf için yoklama başlatın veya canlı katılımı takip edin.</p>
               <Button asChild variant="outline" size="sm" className="border-blue-300 text-blue-800">
                 <Link to="/attendance">Yoklama sayfası</Link>
               </Button>
@@ -164,12 +164,12 @@ export const TeacherDashboard = () => {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">{isAdmin ? 'Tüm Ödevler (hoca bilgisiyle)' : 'Son Ödevler'}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{isAdmin ? 'Tüm Ödevler (hoca bilgisiyle)' : 'Son Ödevler'}</h2>
             {assignments?.length === 0 ? (
           <Card>
             <CardContent className="text-center py-8">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">{isAdmin ? 'Henüz ödev yok' : 'Henüz ödev oluşturmadınız'}</p>
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4">{isAdmin ? 'Henüz ödev yok' : 'Henüz ödev oluşturmadınız'}</p>
               {!isAdmin && (
                 <Link to="/assignments/create">
                   <Button>İlk Ödevi Oluştur</Button>
@@ -188,14 +188,14 @@ export const TeacherDashboard = () => {
                   </div>
                   <CardDescription className="space-y-0.5">
                     <span>{assignment.level?.name} – {assignment.weekNumber}. Hafta</span>
-                    <span className="flex items-center gap-1.5 mt-1 text-gray-500 flex-wrap">
+                    <span className="flex items-center gap-1.5 mt-1 text-muted-foreground flex-wrap">
                       {(assignment as { homework?: { type?: string } }).homework?.type === 'AUDIO' && <span title="Ses"><Mic className="h-3.5 w-3.5" /></span>}
                       {(assignment as { homework?: { type?: string } }).homework?.type === 'FILE' && <span title="Dosya"><Upload className="h-3.5 w-3.5" /></span>}
                       {(assignment as { homework?: { type?: string } }).homework?.type === 'TEXT' && <span title="Metin"><FileText className="h-3.5 w-3.5" /></span>}
                       {(assignment as { homework?: { type?: string } }).homework?.type === 'MIXED' && <span title="Karışık"><Layers className="h-3.5 w-3.5" /></span>}
                       {isAdmin && assignment.teacher?.user && (
                         <>
-                          <span className="text-gray-400">·</span>
+                          <span className="text-muted-foreground">·</span>
                           <User className="h-3.5 w-3.5" />
                           <span>{assignment.teacher.user.name}</span>
                         </>
@@ -205,16 +205,16 @@ export const TeacherDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4 mr-2" />
                       Son teslim: {formatDate(assignment.dueDate)}
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-muted-foreground">
                       <Users className="h-4 w-4 mr-2" />
                       {assignment._count?.submissions || 0} teslim
                     </div>
                     {assignment.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
                         {assignment.description}
                       </p>
                     )}

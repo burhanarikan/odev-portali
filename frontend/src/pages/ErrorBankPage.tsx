@@ -2,10 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { errorBankApi } from '@/api/errorBank.api';
 import { formatDate } from '@/utils/formatDate';
-import { Loader2, AlertTriangle, BookOpen } from 'lucide-react';
+import { AlertTriangle, BookOpen } from 'lucide-react';
+import { PageLoading } from '@/components/feedback/PageLoading';
+import { PageError } from '@/components/feedback/PageError';
 
 export const ErrorBankPage = () => {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['error-bank', 'my'],
     queryFn: errorBankApi.getMyErrors,
   });
@@ -15,11 +17,7 @@ export const ErrorBankPage = () => {
   });
 
   if (isLoading || (!data && !error)) {
-    return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
-    );
+    return <PageLoading message="Hata bankası yükleniyor…" />;
   }
 
   if (error) {
@@ -27,15 +25,10 @@ export const ErrorBankPage = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hata Bankası</h1>
-          <p className="text-gray-600">Dikkat etmeniz gereken hatalar</p>
+          <h1 className="page-title">Hata Bankası</h1>
+          <p className="page-description">Dikkat etmeniz gereken hatalar</p>
         </div>
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-red-600">{message}</p>
-            <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
-          </CardContent>
-        </Card>
+        <PageError message={message} onRetry={() => refetch()} />
       </div>
     );
   }
@@ -46,8 +39,8 @@ export const ErrorBankPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Hata Bankası</h1>
-        <p className="text-gray-600">Dikkat etmeniz gereken hatalar ve kur sonu tekrar listesi</p>
+        <h1 className="page-title">Hata Bankası</h1>
+        <p className="page-description">Dikkat etmeniz gereken hatalar ve kur sonu tekrar listesi</p>
       </div>
 
       <Card>

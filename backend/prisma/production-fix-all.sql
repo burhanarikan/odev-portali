@@ -1,6 +1,22 @@
 -- Production'da "column does not exist" ve eksik tablo hatalarını gidermek için.
 -- Bir kez çalıştırın: DATABASE_URL="..." npx prisma db execute --file prisma/production-fix-all.sql
 
+-- Prisma enum: HomeworkType (seed ve ödev oluşturma için gerekli)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'HomeworkType') THEN
+    CREATE TYPE "HomeworkType" AS ENUM ('TEXT', 'FILE', 'AUDIO', 'MIXED');
+  END IF;
+END $$;
+-- homeworks.type kolonu TEXT ise enum'a çevir (Prisma Client enum bekliyor)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'homeworks' AND column_name = 'type')
+     AND (SELECT data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'homeworks' AND column_name = 'type') = 'text' THEN
+    ALTER TABLE "homeworks" ALTER COLUMN "type" DROP DEFAULT;
+    ALTER TABLE "homeworks" ALTER COLUMN "type" TYPE "HomeworkType" USING "type"::"HomeworkType";
+    ALTER TABLE "homeworks" ALTER COLUMN "type" SET DEFAULT 'TEXT'::"HomeworkType";
+  END IF;
+END $$;
+
 -- timeline_posts (zaman tüneli)
 CREATE TABLE IF NOT EXISTS "timeline_posts" (
     "id" TEXT NOT NULL,
@@ -75,7 +91,7 @@ CREATE TABLE IF NOT EXISTS "homeworks" (
     "title" TEXT NOT NULL,
     "description" TEXT,
     "instructions" TEXT,
-    "type" TEXT NOT NULL DEFAULT 'TEXT',
+    "type" "HomeworkType" NOT NULL DEFAULT 'TEXT'::"HomeworkType",
     "fileUrl" TEXT,
     "audioUrl" TEXT,
     "level_id" TEXT NOT NULL,
@@ -99,7 +115,7 @@ ALTER TABLE "evaluations" ADD COLUMN IF NOT EXISTS "annotation_data" JSONB;
 
 -- homeworks (Prisma alan adı: fileUrl, audioUrl → DB'de aynı veya file_url/audio_url)
 ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "instructions" TEXT;
-ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "type" TEXT NOT NULL DEFAULT 'TEXT';
+ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "type" "HomeworkType" NOT NULL DEFAULT 'TEXT'::"HomeworkType";
 ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "file_url" TEXT;
 ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "audio_url" TEXT;
 ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "fileUrl" TEXT;

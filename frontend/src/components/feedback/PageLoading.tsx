@@ -8,15 +8,15 @@ interface PageLoadingProps {
 export function PageLoading({ message = 'Yükleniyor…' }: PageLoadingProps) {
   return (
     <div className="space-y-6">
-      <Skeleton className="h-8 w-56" />
-      <Skeleton className="h-4 w-72" />
+      <Skeleton className="h-8 w-56 rounded-md" />
+      <Skeleton className="h-4 w-72 rounded-md" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Skeleton className="h-28 rounded-lg" />
         <Skeleton className="h-28 rounded-lg" />
       </div>
-      <div className="flex flex-col items-center justify-center py-12 gap-2">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        <p className="text-sm text-gray-500">{message}</p>
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden />
+        <p className="text-sm text-muted-foreground">{message}</p>
       </div>
     </div>
   );

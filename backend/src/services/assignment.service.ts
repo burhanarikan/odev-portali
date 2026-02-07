@@ -13,7 +13,7 @@ export class AssignmentService {
     });
 
     if (!teacher) {
-      throw createError('Teacher not found', 404);
+      throw createError('Öğretmen kaydı bulunamadı.', 404);
     }
 
     const levelId = data.levelId!;
@@ -152,7 +152,7 @@ export class AssignmentService {
     const teacher = await prisma.teacher.findUnique({
       where: { userId },
     });
-    if (!teacher) throw createError('Teacher not found', 404);
+    if (!teacher) throw createError('Öğretmen kaydı bulunamadı.', 404);
     return teacher.id;
   }
 
@@ -280,7 +280,7 @@ export class AssignmentService {
     });
 
     if (!assignment) {
-      throw createError('Assignment not found', 404);
+      throw createError('Ödev bulunamadı.', 404);
     }
 
     if (callerRole === 'ADMIN') return assignment;
@@ -288,7 +288,7 @@ export class AssignmentService {
       const teacher = await prisma.teacher.findUnique({ where: { userId: teacherUserId } });
       if (teacher && assignment.createdBy === teacher.id) return assignment;
     }
-    throw createError('Not authorized to view this assignment', 403);
+    throw createError('Bu ödevi görüntüleme yetkiniz yok.', 403);
   }
 
   async updateAssignment(id: string, data: Partial<AssignmentInput>, teacherUserId: string) {
@@ -298,11 +298,11 @@ export class AssignmentService {
     });
 
     if (!assignment) {
-      throw createError('Assignment not found', 404);
+      throw createError('Ödev bulunamadı.', 404);
     }
 
     if (assignment.createdBy !== teacherId) {
-      throw createError('Not authorized to update this assignment', 403);
+      throw createError('Bu ödevi güncelleme yetkiniz yok.', 403);
     }
 
     return prisma.assignment.update({
@@ -331,11 +331,11 @@ export class AssignmentService {
     });
 
     if (!assignment) {
-      throw createError('Assignment not found', 404);
+      throw createError('Ödev bulunamadı.', 404);
     }
 
     if (assignment.createdBy !== teacherId) {
-      throw createError('Not authorized to delete this assignment', 403);
+      throw createError('Bu ödevi silme yetkiniz yok.', 403);
     }
 
     return prisma.assignment.delete({
@@ -399,7 +399,7 @@ export class AssignmentService {
     });
 
     if (!teacher) {
-      throw createError('Teacher not found', 404);
+      throw createError('Öğretmen kaydı bulunamadı.', 404);
     }
 
     return prisma.group.create({

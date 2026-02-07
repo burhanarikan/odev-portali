@@ -36,14 +36,14 @@ function CircularProgress({ value, size = 48, strokeWidth = 4 }: { value: number
 }
 
 export const StudentDashboard = () => {
-  const { data: assignments, isLoading, error } = useStudentAssignments();
+  const { data: assignments, isLoading, error, refetch } = useStudentAssignments();
   const { accepted: consentAccepted } = useConsent();
   const setConsentModalOpen = useConsentStore((s) => s.setConsentModalOpen);
 
   if (isLoading) return <PageLoading message="Ödevler yükleniyor…" />;
   if (error) {
     const message = (error as Error)?.message || 'Ödevler yüklenirken bir hata oluştu.';
-    return <PageError message={message} onRetry={() => window.location.reload()} />;
+    return <PageError message={message} onRetry={() => refetch()} />;
   }
 
   const getStatusBadge = (assignment: import('@/types').Assignment) => {
@@ -79,8 +79,8 @@ export const StudentDashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Öğrenci Paneli</h1>
-        <p className="text-gray-600">Ödevlerinizi görüntüleyin ve teslim edin</p>
+        <h1 className="page-title">Öğrenci Paneli</h1>
+        <p className="page-description">Ödevlerinizi görüntüleyin ve teslim edin</p>
       </div>
 
       {!consentAccepted && (
@@ -102,7 +102,7 @@ export const StudentDashboard = () => {
       {/* Zero-Click: Şimdi ne yapmalıyım? */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {nextAssignment ? (
-          <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+          <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white transition-shadow hover:shadow-md">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-blue-800 flex items-center gap-2">
                 <ClipboardList className="h-4 w-4" />
@@ -110,8 +110,8 @@ export const StudentDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-xl font-bold text-gray-900">{nextAssignment.title}</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-xl font-bold text-foreground">{nextAssignment.title}</p>
+              <p className="text-sm text-muted-foreground">
                 Son teslim: {formatDate(nextAssignment.dueDate)} · {timeUntil(nextAssignment.dueDate)} kaldı
               </p>
               <Button asChild className="w-full md:w-auto">
@@ -119,6 +119,14 @@ export const StudentDashboard = () => {
                   Ödeve git <ChevronRight className="h-4 w-4 ml-1 inline" />
                 </Link>
               </Button>
+            </CardContent>
+          </Card>
+        ) : totalDue === 0 ? (
+          <Card className="border border-slate-200 bg-slate-50/50">
+            <CardContent className="py-6 text-center">
+              <FileText className="h-12 w-12 text-slate-400 mx-auto mb-2" />
+              <p className="font-medium text-slate-700">Henüz ödev atanmadı</p>
+              <p className="text-sm text-slate-600 mt-1">Öğretmeniniz ödev verdiğinde burada listelenecek.</p>
             </CardContent>
           </Card>
         ) : (
@@ -138,7 +146,7 @@ export const StudentDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-gray-700">Hoca tahtada paylaştığı yoklama kodunu girin ve derse katılın.</p>
+            <p className="text-muted-foreground">Hoca tahtada paylaştığı yoklama kodunu girin ve derse katılın.</p>
             <Button asChild variant="outline" className="w-full md:w-auto border-amber-300 text-amber-800 hover:bg-amber-100">
               <Link to="/attendance/join">Derse katıl</Link>
             </Button>
@@ -156,29 +164,39 @@ export const StudentDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center gap-6">
-            {totalDue > 0 && (
+            {totalDue > 0 ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <CircularProgress value={(totalSubmitted / totalDue) * 100} size={56} strokeWidth={5} />
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{totalSubmitted} / {totalDue}</p>
+                    <p className="text-xs text-muted-foreground">tamamlanan ödev</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-4 items-baseline">
+                  <span className="text-xl font-bold text-foreground">{totalSubmitted} tamamlandı</span>
+                  <span className="text-muted-foreground">/ toplam {totalDue} verilen ödev</span>
+                  <Badge variant={totalSubmitted >= totalDue ? 'default' : totalSubmitted / totalDue >= 0.5 ? 'secondary' : 'destructive'}>
+                    %{Math.round((totalSubmitted / totalDue) * 100)} tamamlama
+                  </Badge>
+                  {pendingCount > 0 && (
+                    <span className="text-amber-700 text-sm font-medium">
+                      · {pendingCount} yapılmadı
+                    </span>
+                  )}
+                </div>
+              </>
+            ) : (
               <div className="flex items-center gap-3">
-                <CircularProgress value={(totalSubmitted / totalDue) * 100} size={56} strokeWidth={5} />
+                <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
+                  <FileText className="h-7 w-7 text-slate-400" />
+                </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{totalSubmitted} / {totalDue}</p>
-                  <p className="text-xs text-gray-600">tamamlanan ödev</p>
+                  <p className="text-lg font-semibold text-foreground">Henüz ödev yok</p>
+                  <p className="text-sm text-muted-foreground">Öğretmeniniz ödev verdiğinde burada özeti göreceksiniz.</p>
                 </div>
               </div>
             )}
-            <div className="flex flex-wrap gap-4 items-baseline">
-              <span className="text-xl font-bold text-gray-900">{totalSubmitted} tamamlandı</span>
-              <span className="text-gray-600">/ toplam {totalDue} verilen ödev</span>
-              {totalDue > 0 && (
-                <Badge variant={totalSubmitted >= totalDue ? 'default' : totalSubmitted / totalDue >= 0.5 ? 'secondary' : 'destructive'}>
-                  %{Math.round((totalSubmitted / totalDue) * 100)} tamamlama
-                </Badge>
-              )}
-              {pendingCount > 0 && (
-                <span className="text-amber-700 text-sm font-medium">
-                  · {pendingCount} yapılmadı
-                </span>
-              )}
-            </div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             Tamamlandı / yapılmadı durumu · Kur sonu özeti
@@ -229,12 +247,12 @@ export const StudentDashboard = () => {
 
       <div className="space-y-6">
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Aktif Ödevler</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Aktif Ödevler</h2>
           {assignments?.active?.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Aktif ödev bulunmuyor</p>
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Aktif ödev bulunmuyor</p>
               </CardContent>
             </Card>
           ) : (
@@ -252,16 +270,16 @@ export const StudentDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4 mr-2" />
                         Son teslim: {formatDate(assignment.dueDate)}
                       </div>
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-muted-foreground">
                         <Clock className="h-4 w-4 mr-2" />
                         Başlangıç: {formatDate(assignment.startDate)}
                       </div>
                       {assignment.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
                           {assignment.description}
                         </p>
                       )}
@@ -280,7 +298,7 @@ export const StudentDashboard = () => {
 
         {(assignments?.upcoming?.length ?? 0) > 0 && (
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Gelecek Ödevler</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Gelecek Ödevler</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {assignments?.upcoming?.map((assignment) => (
                 <Card key={assignment.id} className="hover:shadow-md transition-shadow opacity-90">
@@ -294,7 +312,7 @@ export const StudentDashboard = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2 text-sm text-gray-600">
+                    <div className="space-y-2 text-sm text-muted-foreground">
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2" />
                         Son teslim: {formatDate(assignment.dueDate)}
@@ -314,7 +332,7 @@ export const StudentDashboard = () => {
 
         {(assignments?.past?.length ?? 0) > 0 && (
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Geçmiş / Tamamlanan</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Geçmiş / Tamamlanan</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {assignments?.past?.map((assignment) => (
                 <Card key={assignment.id} className="hover:shadow-md transition-shadow">
@@ -328,7 +346,7 @@ export const StudentDashboard = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2 text-sm text-gray-600">
+                    <div className="space-y-2 text-sm text-muted-foreground">
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-2" />
                         Bitiş: {formatDate(assignment.dueDate)}

@@ -140,10 +140,10 @@ export const Sidebar = () => {
                 to={href}
                 className={({ isActive }) =>
                   cn(
-                    'group flex items-center px-2 py-2 text-sm font-medium rounded-md',
+                    'group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150',
                     isActive
-                      ? 'bg-muted text-foreground'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      ? 'bg-primary/10 text-primary border-l-4 border-primary ml-0 pl-[calc(0.75rem-4px)]'
+                      : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground border-l-4 border-transparent'
                   )
                 }
               >
@@ -151,8 +151,8 @@ export const Sidebar = () => {
                   <>
                     <item.icon
                       className={cn(
-                        'mr-3 h-5 w-5 flex-shrink-0',
-                        isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
+                        'mr-3 h-5 w-5 flex-shrink-0 transition-colors',
+                        isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                       )}
                     />
                     {item.name}

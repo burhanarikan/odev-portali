@@ -44,8 +44,9 @@ Diğer öğretmen ve öğrenciler: **şifre `123456`**. Öğrenci e-postaları `
 - **Hata bankası:** Öğrencilerin bir kısmında grammar/vocabulary kayıtları
 - **Duyurular:** 22 duyuru, PDG ve öğretmenler
 - **Zaman tüneli:** 30 hafta × 2 sınıf = 60 paylaşım
-- **Yoklama:** Haftalık oturumlar, öğrencilerin ~%75–95’i katılmış
-- **Müdahale logları:** Devamsızlık / ödev eksikliği / akademik risk
+- **Yoklama:** Haftalık oturumlar; sınıfta 3’er “kronik devamsız” (hiç/neredeyse hiç yoklama yok), diğerleri ~%80–95 katılım
+- **Teslimler:** Sınıfta 3’er “ödev teslim etmeyen” (çoğu ödevi teslim etmez); diğerleri ~%75–90 teslim
+- **Müdahale logları:** Devamsızlar için “X haftadır devamsız”, teslim etmeyenler için “Ödev teslim edilmedi”, diğerleri için “Akademik risk / düşük not”
 - **Beceri puanları:** vocabulary, grammar, listening, speaking (50–95)
 
 ## Tekrar Çalıştırma

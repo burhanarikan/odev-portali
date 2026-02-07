@@ -10,15 +10,15 @@ export const Header = () => {
   const { effective, toggle } = useThemeStore();
 
   return (
-    <header className="bg-background border-b border-border shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm border-b border-border shadow-sm">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-14 lg:h-16">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold text-foreground">
+            <h1 className="text-lg lg:text-xl font-bold text-foreground tracking-tight">
               Ödev Yönetim Sistemi
             </h1>
-            <span className="text-xs font-medium text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 px-2 py-1 rounded border border-amber-200 dark:border-amber-800">
-              Deneme sürümüdür
+            <span className="text-xs font-medium text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
+              Deneme
             </span>
           </div>
 

@@ -44,12 +44,13 @@ export const AssignmentDetails = () => {
   const error = isStudent ? studentResult.error : teacherResult.error;
 
   if (!id?.trim()) {
+    const backTo = user?.role === 'STUDENT' ? '/student' : '/teacher';
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <p className="text-gray-600 font-medium">Ödev adresi geçersiz</p>
-          <Link to="/dashboard" className="mt-4">
-            <Button variant="outline">Ana Sayfaya Dön</Button>
+          <Link to={backTo} className="mt-4">
+            <Button variant="outline">Ana sayfaya dön</Button>
           </Link>
         </CardContent>
       </Card>
@@ -66,6 +67,7 @@ export const AssignmentDetails = () => {
   }
 
   if (error || !assignment) {
+    const backTo = user?.role === 'STUDENT' ? '/student' : '/teacher';
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
@@ -73,8 +75,8 @@ export const AssignmentDetails = () => {
           <p className="text-sm text-gray-500 mt-1">
             Bu ödev size atanmamış olabilir veya artık mevcut olmayabilir.
           </p>
-          <Link to="/dashboard" className="mt-4">
-            <Button variant="outline">Ana Sayfaya Dön</Button>
+          <Link to={backTo} className="mt-4">
+            <Button variant="outline">Ana sayfaya dön</Button>
           </Link>
         </CardContent>
       </Card>
@@ -108,10 +110,10 @@ export const AssignmentDetails = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center space-x-4">
-          <Link to="/dashboard">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Geri
+          <Link to={isStudent ? '/student' : '/teacher'}>
+            <Button variant="outline" size="sm" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Ana sayfaya dön
             </Button>
           </Link>
           <div>

@@ -13,7 +13,7 @@ export const StudentsPage = () => {
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
 
-  const { data: students = [], isLoading, error } = useTeacherStudents();
+  const { data: students = [], isLoading, error, refetch } = useTeacherStudents();
 
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
@@ -26,14 +26,14 @@ export const StudentsPage = () => {
   }, [students, selectedLevel, selectedClass]);
 
   if (isLoading) return <PageLoading message="Öğrenci listesi yükleniyor…" />;
-  if (error) return <PageError message="Öğrenci listesi yüklenirken bir hata oluştu." />;
+  if (error) return <PageError message="Öğrenci listesi yüklenirken bir hata oluştu." onRetry={() => refetch()} />;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Öğrenciler</h1>
-          <p className="text-gray-600">Tüm öğrencileri görüntüleyin ve yönetin</p>
+          <h1 className="page-title">Öğrenciler</h1>
+          <p className="page-description">Tüm öğrencileri görüntüleyin ve yönetin</p>
         </div>
       </div>
 

@@ -178,6 +178,16 @@ async function main() {
 
   const allStudentIds = [...studentIdsA101, ...studentIdsA102];
 
+  // Senaryo: Bazı öğrenciler devamsız veya ödev teslim etmiyor (A1/A2'de kalan, hiç gelmeyen simülasyonu)
+  const CHRONIC_ABSENT_PER_CLASS = 3;  // Hiç / neredeyse hiç yoklama kaydı yok
+  const CHRONIC_NON_SUBMIT_PER_CLASS = 3; // Çoğu ödevi teslim etmiyor
+  const chronicAbsentA101 = studentIdsA101.slice(0, CHRONIC_ABSENT_PER_CLASS);
+  const chronicAbsentA102 = studentIdsA102.slice(0, CHRONIC_ABSENT_PER_CLASS);
+  const chronicNonSubmitA101 = studentIdsA101.slice(CHRONIC_ABSENT_PER_CLASS, CHRONIC_ABSENT_PER_CLASS + CHRONIC_NON_SUBMIT_PER_CLASS);
+  const chronicNonSubmitA102 = studentIdsA102.slice(CHRONIC_ABSENT_PER_CLASS, CHRONIC_ABSENT_PER_CLASS + CHRONIC_NON_SUBMIT_PER_CLASS);
+  const chronicAbsentAll = new Set([...chronicAbsentA101, ...chronicAbsentA102]);
+  const chronicNonSubmitAll = new Set([...chronicNonSubmitA101, ...chronicNonSubmitA102]);
+
   const now = new Date();
   const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
 
@@ -316,10 +326,11 @@ async function main() {
     orderBy: { weekNumber: 'asc' },
   });
 
-  // --- Teslimler: her ödev için öğrencilerin ~%75'i teslim etmiş, bir kısmı gecikmeli ---
+  // --- Teslimler: çoğu öğrenci teslim etmiş; "chronic non-submitter" nadiren teslim eder ---
   for (const assignment of b1Assignments) {
-    const targetStudents = assignment.weekNumber <= 10 ? studentIdsA101 : allStudentIds;
-    const submitCount = Math.floor(targetStudents.length * (0.7 + Math.random() * 0.2));
+    const targetStudentsRaw = assignment.weekNumber <= 10 ? studentIdsA101 : allStudentIds;
+    const targetStudents = targetStudentsRaw.filter((id) => !chronicNonSubmitAll.has(id));
+    const submitCount = Math.floor(Math.max(targetStudents.length * (0.75 + Math.random() * 0.2), targetStudents.length - 2));
     const submitters = pickN(targetStudents, submitCount);
 
     for (const studentId of submitters) {
@@ -433,8 +444,10 @@ async function main() {
         }).catch(() => null);
         if (session) {
           const classStudentIds = cls.id === classA101.id ? studentIdsA101 : studentIdsA102;
-          const presentCount = Math.floor(classStudentIds.length * (0.75 + Math.random() * 0.2));
-          const present = pickN(classStudentIds, presentCount);
+          const absentThisClass = cls.id === classA101.id ? chronicAbsentA101 : chronicAbsentA102;
+          const canAttend = classStudentIds.filter((id) => !absentThisClass.includes(id));
+          const presentCount = Math.floor(canAttend.length * (0.8 + Math.random() * 0.15));
+          const present = pickN(canAttend, presentCount);
           for (const studentId of present) {
             await prisma.attendanceRecord.create({
               data: { sessionId: session.id, studentId },
@@ -445,15 +458,38 @@ async function main() {
     }
   }
 
-  // --- Müdahale logları: devamsız / ödev eksik / düşük not ---
-  const atRiskStudents = pickN(allStudentIds, 12);
-  for (const studentId of atRiskStudents) {
+  // --- Müdahale logları: "X haftadır devamsız", "Ödev teslim edilmedi", "Akademik risk" ---
+  const reasonsDevamsiz = INTERVENTION_REASONS.filter((r) => r.includes('devamsız'));
+  const reasonsOdev = INTERVENTION_REASONS.filter((r) => r.includes('Ödev') || r.includes('ödev'));
+  const reasonsAkademik = INTERVENTION_REASONS.filter((r) => r.includes('Akademik') || r.includes('sınav'));
+  for (const studentId of chronicAbsentAll) {
     await prisma.interventionLog.create({
       data: {
         studentId,
         teacherId: pick(teacherIds),
-        reason: pick(INTERVENTION_REASONS),
-        note: 'Demo müdahale kaydı.',
+        reason: pick(reasonsDevamsiz.length ? reasonsDevamsiz : INTERVENTION_REASONS),
+        note: 'Devamsızlık takibi; demo kayıt.',
+      },
+    }).catch(() => {});
+  }
+  for (const studentId of chronicNonSubmitAll) {
+    await prisma.interventionLog.create({
+      data: {
+        studentId,
+        teacherId: pick(teacherIds),
+        reason: pick(reasonsOdev.length ? reasonsOdev : INTERVENTION_REASONS),
+        note: 'Ödev teslim edilmedi; demo kayıt.',
+      },
+    }).catch(() => {});
+  }
+  const otherAtRisk = allStudentIds.filter((id) => !chronicAbsentAll.has(id) && !chronicNonSubmitAll.has(id));
+  for (const studentId of pickN(otherAtRisk, 6)) {
+    await prisma.interventionLog.create({
+      data: {
+        studentId,
+        teacherId: pick(teacherIds),
+        reason: pick(reasonsAkademik.length ? reasonsAkademik : INTERVENTION_REASONS),
+        note: 'Akademik risk / düşük not; demo kayıt.',
       },
     }).catch(() => {});
   }

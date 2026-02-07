@@ -1,42 +1,43 @@
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import { Home, ArrowLeft } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { Home, ArrowLeft, FileQuestion } from 'lucide-react';
 
 export const NotFound = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuthStore();
+
+  const goHome = () => {
+    if (isAuthenticated && user?.role === 'STUDENT') navigate('/student', { replace: true });
+    else if (isAuthenticated && (user?.role === 'TEACHER' || user?.role === 'ADMIN')) navigate('/teacher', { replace: true });
+    else navigate('/login', { replace: true });
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="mb-8">
-          <h1 className="text-9xl font-bold text-gray-300">404</h1>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-            Sayfa Bulunamadı
-          </h2>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            Aradığınız sayfa mevcut değil veya taşınmış olabilir. Ana sayfaya dönerek işleme devam edebilirsiniz.
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center space-x-2"
-          >
-            <Home className="h-4 w-4" />
-            <span>Ana Sayfa</span>
-          </Button>
-          
-          <Button 
-            variant="outline"
-            onClick={() => navigate(-1)}
-            className="flex items-center space-x-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Geri</span>
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md text-center shadow-lg">
+        <CardContent className="pt-8 pb-8">
+          <div className="mb-6">
+            <FileQuestion className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <p className="text-6xl font-bold text-muted-foreground/50">404</p>
+            <h1 className="page-title mt-2">Sayfa bulunamadı</h1>
+            <p className="page-description mt-2 max-w-sm mx-auto">
+              Aradığınız sayfa mevcut değil veya taşınmış olabilir.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button onClick={goHome} className="gap-2">
+              <Home className="h-4 w-4" />
+              Ana sayfa
+            </Button>
+            <Button variant="outline" onClick={() => navigate(-1)} className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Geri
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
