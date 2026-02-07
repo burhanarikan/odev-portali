@@ -1,11 +1,8 @@
 import axios from 'axios';
 
 const getBaseURL = () => {
-  if (import.meta.env.DEV) {
-    return 'http://localhost:5050/api';
-  }
-  const url = import.meta.env.VITE_API_URL || '/api';
-  // VITE_API_URL bazen sadece origin (https://xxx.onrender.com); /api ekle
+  const envUrl = import.meta.env.VITE_API_URL;
+  const url = envUrl && envUrl.trim() !== '' ? envUrl.trim() : (import.meta.env.DEV ? 'http://localhost:5050/api' : '/api');
   if (url && !url.endsWith('/api') && !url.endsWith('/api/')) {
     return url.replace(/\/?$/, '') + '/api';
   }

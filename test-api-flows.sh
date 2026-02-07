@@ -1,19 +1,20 @@
 #!/bin/bash
-# Öğretmen ve öğrenci akışlarını API üzerinden test eder.
+# Smoke test – TEST-PLAN.md kısa listesine uygun API akışları.
+# Seed kullanıcıları: elif.yilmaz@dilokulu.com, ahmed.hassan.b1@email.com (şifre: 123456)
 # Kullanım: ./test-api-flows.sh [BASE_URL]
-# Örnek: ./test-api-flows.sh http://localhost:5050
+# Örnek: ./test-api-flows.sh https://odev-portali.onrender.com
 
 set -e
-BASE="${1:-http://localhost:5050}"
+BASE="${1:-${SMOKE_BASE_URL:-http://localhost:5050}}"
 API="$BASE/api"
-echo "=== API Base: $API ==="
+echo "=== Smoke test – API Base: $API ==="
 
 echo ""
-echo "1. Öğretmen girişi"
-TECH_RESP=$(curl -s -X POST "$API/auth/login" -H "Content-Type: application/json" -d '{"email":"ogretmen@dilokulu.com","password":"123456"}')
+echo "1. Öğretmen girişi (TEACHER)"
+TECH_RESP=$(curl -s -X POST "$API/auth/login" -H "Content-Type: application/json" -d '{"email":"elif.yilmaz@dilokulu.com","password":"123456"}')
 TOKEN_T=$(echo "$TECH_RESP" | jq -r '.token')
 if [ "$TOKEN_T" = "null" ] || [ -z "$TOKEN_T" ]; then
-  echo "HATA: Öğretmen girişi başarısız. Yanıt: $TECH_RESP"
+  echo "   HATA: Öğretmen girişi başarısız. Yanıt: $TECH_RESP"
   exit 1
 fi
 echo "   OK - Token alındı"
@@ -40,11 +41,26 @@ if [ "$N_ASSIGN" -gt 0 ]; then
 fi
 
 echo ""
-echo "4. Öğrenci girişi"
-STU_RESP=$(curl -s -X POST "$API/auth/login" -H "Content-Type: application/json" -d '{"email":"ayse.yilmaz@email.com","password":"123456"}')
+echo "3b. Öğretmen - Taslak listesi (homeworks)"
+HWS=$(curl -s -H "Authorization: Bearer $TOKEN_T" "$API/teacher/homeworks")
+N_HW=$(echo "$HWS" | jq 'length')
+echo "   OK - $N_HW taslak"
+
+echo ""
+echo "3c. Öğretmen - Analitik dashboard"
+DASH=$(curl -s -H "Authorization: Bearer $TOKEN_T" "$API/analytics/dashboard")
+if echo "$DASH" | jq -e . >/dev/null 2>&1; then
+  echo "   OK - Dashboard istatistikleri alındı"
+else
+  echo "   UYARI: Dashboard yanıtı: $DASH"
+fi
+
+echo ""
+echo "4. Öğrenci girişi (STUDENT)"
+STU_RESP=$(curl -s -X POST "$API/auth/login" -H "Content-Type: application/json" -d '{"email":"ahmed.hassan.b1@email.com","password":"123456"}')
 TOKEN_S=$(echo "$STU_RESP" | jq -r '.token')
 if [ "$TOKEN_S" = "null" ] || [ -z "$TOKEN_S" ]; then
-  echo "HATA: Öğrenci girişi başarısız. Yanıt: $STU_RESP"
+  echo "   HATA: Öğrenci girişi başarısız. Yanıt: $STU_RESP"
   exit 1
 fi
 echo "   OK - Token alındı"
@@ -81,5 +97,22 @@ else
   echo "6-7. Atlanıyor (aktif ödev yok)"
 fi
 
+# Smoke 7: Başka öğretmenin ödev detayı → 403
+if [ "$N_ASSIGN" -gt 0 ] && [ -n "$FIRST_ID" ]; then
+  echo ""
+  echo "8. Başka öğretmenin ödev detayı (403 beklenir)"
+  TOKEN_T2=$(curl -s -X POST "$API/auth/login" -H "Content-Type: application/json" -d '{"email":"mehmet.kaya@dilokulu.com","password":"123456"}' | jq -r '.token')
+  if [ -n "$TOKEN_T2" ] && [ "$TOKEN_T2" != "null" ]; then
+    CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN_T2" "$API/teacher/assignments/$FIRST_ID")
+    if [ "$CODE" = "403" ]; then
+      echo "   OK - 403 (yetkisiz)"
+    else
+      echo "   UYARI: 403 bekleniyordu, alınan: $CODE"
+    fi
+  else
+    echo "   Atlanıyor (ikinci öğretmen girişi yok)"
+  fi
+fi
+
 echo ""
-echo "=== Tüm akışlar tamamlandı ==="
+echo "=== Smoke test tamamlandı ==="

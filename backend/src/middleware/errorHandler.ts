@@ -48,14 +48,13 @@ export const errorHandler = (
 
   console.error(`Error ${statusCode}: ${message}`);
   if (err.stack) console.error(err.stack);
-  if (statusCode === 500 && process.env.NODE_ENV === 'production') {
-    console.error('[500] Detay (Render loglarında kontrol edin):', (err as Error).message);
+  if (statusCode === 500) {
+    const e = err as Error & { code?: string };
+    console.error('[500] Detay:', e.message, e.code ? `(code: ${e.code})` : '');
   }
 
   // #region agent log
-  if (statusCode === 500) {
-    fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H5',location:'errorHandler.ts:500',message:'500 response',data:{statusCode,message:message.substring(0,200),errName:(err as Error).name},timestamp:Date.now()})}).catch(()=>{});
-  }
+  // (removed external fetch to avoid side effects in production)
   // #endregion
 
   if (process.env.NODE_ENV === 'development') {

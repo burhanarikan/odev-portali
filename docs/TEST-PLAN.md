@@ -185,6 +185,12 @@ npm run test
 
 ---
 
+## API smoke script (otomatik)
+
+Backend çalışırken (ve seed verisi varsa) kök dizinde: `./test-api-flows.sh` veya `./test-api-flows.sh https://odev-portali.onrender.com`. Öğretmen/öğrenci girişi, ödev/taslak listesi, analitik, 403 kontrolü.
+
+---
+
 ## Kısa “smoke” listesi (en az bunları çalıştırın)
 
 1. STUDENT ile giriş → ödev listesi → kendi ödevine teslim.
