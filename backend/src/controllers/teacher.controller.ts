@@ -31,7 +31,7 @@ export const getAssignments = async (req: Request, res: Response, next: NextFunc
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     // Yönetici tüm ödevleri görür (kim ne vermiş takibi)
     const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
-    const assignments = await assignmentService.getAssignments(teacherUserId);
+    const assignments = await assignmentService.getAssignments(teacherUserId, req.user.role);
     res.json(assignments);
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/33b73e8a-9feb-4e60-88ab-976de39f9176',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H1',location:'teacher.controller:getAssignments:exit',message:'getAssignments success',data:{count:Array.isArray(assignments)?assignments.length:0},timestamp:Date.now()})}).catch(()=>{});
@@ -43,8 +43,9 @@ export const getAssignments = async (req: Request, res: Response, next: NextFunc
 
 export const getAssignmentById = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     const { id } = req.params;
-    const assignment = await assignmentService.getAssignmentById(id ?? '');
+    const assignment = await assignmentService.getAssignmentById(id ?? '', req.user.userId, req.user.role);
     res.json(assignment);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
@@ -208,7 +209,8 @@ export const createHomework = async (req: Request, res: Response, next: NextFunc
 
 export const getHomeworkById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const homework = await homeworkService.getById(req.params.id ?? '');
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const homework = await homeworkService.getById(req.params.id ?? '', req.user.userId, req.user.role);
     res.json(homework);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);

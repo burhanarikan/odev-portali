@@ -27,11 +27,13 @@ export const authOptions: NextAuthOptions = {
         const user = data.user;
         const token = data.token;
         if (!user || !token) return null;
+        const role = user.role != null ? String(user.role).trim() : '';
+        if (role !== 'STUDENT' && role !== 'TEACHER' && role !== 'ADMIN') return null;
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
+          role,
           token,
         };
       },
@@ -48,7 +50,10 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { role?: string }).role = token.role as string;
+        const role = token.role != null ? String(token.role).trim() : '';
+        if (role === 'STUDENT' || role === 'TEACHER' || role === 'ADMIN') {
+          (session.user as { role?: string }).role = role;
+        }
         (session.user as { id?: string }).id = token.id as string;
         (session as { accessToken?: string }).accessToken = token.accessToken as string;
       }

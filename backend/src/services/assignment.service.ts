@@ -157,7 +157,10 @@ export class AssignmentService {
     return submissions;
   }
 
-  async getAssignments(teacherUserId?: string) {
+  async getAssignments(teacherUserId?: string, callerRole?: string) {
+    if (!teacherUserId && callerRole !== 'ADMIN') {
+      throw createError('Yetkisiz', 403);
+    }
     const teacherId = teacherUserId ? await this.resolveTeacherId(teacherUserId) : undefined;
     const where = teacherId ? { createdBy: teacherId } : {};
     return prisma.assignment.findMany({
@@ -183,7 +186,7 @@ export class AssignmentService {
     });
   }
 
-  async getAssignmentById(id: string) {
+  async getAssignmentById(id: string, teacherUserId?: string, callerRole?: string) {
     const assignment = await prisma.assignment.findUnique({
       where: { id },
       include: {
@@ -256,7 +259,12 @@ export class AssignmentService {
       throw createError('Assignment not found', 404);
     }
 
-    return assignment;
+    if (callerRole === 'ADMIN') return assignment;
+    if (teacherUserId) {
+      const teacher = await prisma.teacher.findUnique({ where: { userId: teacherUserId } });
+      if (teacher && assignment.createdBy === teacher.id) return assignment;
+    }
+    throw createError('Not authorized to view this assignment', 403);
   }
 
   async updateAssignment(id: string, data: Partial<AssignmentInput>, teacherUserId: string) {

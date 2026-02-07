@@ -35,7 +35,7 @@ export const getLogs = async (req: Request, res: Response, next: NextFunction) =
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     const studentId = req.query.studentId as string | undefined;
-    const list = await service.getLogs(studentId);
+    const list = await service.getLogs(studentId, req.user.userId, req.user.role);
     res.json(list);
   } catch (e) {
     errorHandler(e as AppError, req, res, next);

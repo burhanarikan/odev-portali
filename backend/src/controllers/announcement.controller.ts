@@ -38,7 +38,8 @@ export const createAnnouncement = async (req: Request, res: Response, next: Next
 
 export const deleteAnnouncement = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await announcementService.delete(req.params.id ?? '');
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    await announcementService.delete(req.params.id ?? '', req.user.userId, req.user.role);
     res.status(204).send();
   } catch (e) {
     errorHandler(e as AppError, req, res, next);

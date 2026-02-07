@@ -46,7 +46,7 @@ export class HomeworkService {
     });
   }
 
-  async getById(id: string) {
+  async getById(id: string, teacherUserId?: string, callerRole?: string) {
     const homework = await prisma.homework.findUnique({
       where: { id },
       include: {
@@ -61,7 +61,12 @@ export class HomeworkService {
       },
     });
     if (!homework) throw createError('Homework not found', 404);
-    return homework;
+    if (callerRole === 'ADMIN') return homework;
+    if (teacherUserId) {
+      const teacherId = await this.resolveTeacherId(teacherUserId);
+      if (homework.teacherId === teacherId) return homework;
+    }
+    throw createError('Not authorized to view this homework', 403);
   }
 
   async update(id: string, data: Partial<HomeworkInput>, teacherUserId: string) {

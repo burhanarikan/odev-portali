@@ -6,7 +6,8 @@ const analyticsService = new AnalyticsService();
 
 export const getDashboardStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const stats = await analyticsService.getDashboardStats();
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const stats = await analyticsService.getDashboardStats(req.user.role);
     res.json(stats);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);

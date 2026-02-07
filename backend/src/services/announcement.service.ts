@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import { createError } from '../middleware/errorHandler';
 
 export class AnnouncementService {
   async list(limit = 50) {
@@ -20,7 +21,12 @@ export class AnnouncementService {
     });
   }
 
-  async delete(id: string) {
+  async delete(id: string, callerUserId: string, callerRole: string) {
+    const announcement = await prisma.announcement.findUnique({ where: { id } });
+    if (!announcement) throw createError('Announcement not found', 404);
+    if (callerRole !== 'ADMIN' && announcement.authorId !== callerUserId) {
+      throw createError('Not authorized to delete this announcement', 403);
+    }
     return prisma.announcement.delete({ where: { id } });
   }
 }

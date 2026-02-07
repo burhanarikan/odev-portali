@@ -28,6 +28,19 @@ function isProtected(pathname: string) {
   return protectedPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
 }
 
+const teacherOnlyPaths = ['/teacher', '/teacher-resources', '/teacher-wiki', '/students', '/analytics', '/submissions', '/intervention'];
+
+function isTeacherOnly(pathname: string) {
+  if (pathname.startsWith('/attendance') && !pathname.startsWith('/attendance/join')) return true;
+  return teacherOnlyPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
+}
+function isStudentOnly(pathname: string) {
+  if (pathname === '/attendance/join' || pathname.startsWith('/attendance/join/')) return true;
+  return ['/student', '/evaluations', '/portfolio', '/makeup', '/peer-review', '/error-bank'].some(
+    (p) => pathname === p || pathname.startsWith(p + '/')
+  );
+}
+
 export async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const { pathname } = req.nextUrl;
@@ -39,6 +52,8 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(login);
     }
     const role = token.role as string | undefined;
+    if (role === 'STUDENT' && isTeacherOnly(pathname)) return NextResponse.redirect(new URL('/dashboard/student', req.url));
+    if ((role === 'TEACHER' || role === 'ADMIN') && isStudentOnly(pathname)) return NextResponse.redirect(new URL('/dashboard/teacher', req.url));
     if (pathname === '/dashboard' || pathname === '/dashboard/') {
       if (role === 'STUDENT') return NextResponse.redirect(new URL('/dashboard/student', req.url));
       if (role === 'TEACHER' || role === 'ADMIN') return NextResponse.redirect(new URL('/dashboard/teacher', req.url));

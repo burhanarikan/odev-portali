@@ -151,6 +151,7 @@ export class StudentService {
 
     const student = await prisma.student.findUnique({
       where: { userId: studentId },
+      include: { class: { include: { level: true } } },
     });
 
     if (!student) {
@@ -159,10 +160,20 @@ export class StudentService {
 
     const assignment = await prisma.assignment.findUnique({
       where: { id: data.assignmentId },
+      include: { targets: true },
     });
 
     if (!assignment) {
       throw createError('Assignment not found', 404);
+    }
+
+    if (assignment.levelId !== student.class.levelId) {
+      throw createError('Bu ödev sizin seviyenize ait değil', 403);
+    }
+    const hasTarget = assignment.targets.length === 0 ||
+      assignment.targets.some((t) => t.classId === student.classId || t.studentId === student.id);
+    if (!hasTarget) {
+      throw createError('Bu ödev size hedeflenmemiş', 403);
     }
 
     const existingSubmission = await prisma.submission.findFirst({

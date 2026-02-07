@@ -2,8 +2,26 @@ import { prisma } from '../config/database';
 import { createError } from '../middleware/errorHandler';
 
 export class InterventionService {
-  /** Kırmızı alarm: 2 ardışık devamsızlık veya 2 kaçan ödev. */
+  /** Kırmızı alarm: 2 ardışık devamsızlık veya 2 kaçan ödev. Öğretmen sadece kendi yoklama/ödev verdiği sınıf ve öğrencileri görür. */
   async getAtRiskStudents(teacherUserId?: string) {
+    let allowedClassIds = new Set<string>();
+    let allowedStudentIds = new Set<string>();
+    if (teacherUserId) {
+      const teacher = await prisma.teacher.findUnique({ where: { userId: teacherUserId } });
+      if (teacher) {
+        const sessions = await prisma.attendanceSession.findMany({ where: { teacherId: teacher.id }, select: { classId: true } });
+        sessions.forEach((s) => { if (s.classId) allowedClassIds.add(s.classId); });
+        const targets = await prisma.assignmentTarget.findMany({
+          where: { assignment: { createdBy: teacher.id } },
+          select: { classId: true, studentId: true },
+        });
+        targets.forEach((t) => {
+          if (t.classId) allowedClassIds.add(t.classId);
+          if (t.studentId) allowedStudentIds.add(t.studentId);
+        });
+      }
+    }
+
     const students = await prisma.student.findMany({
       include: {
         user: { select: { name: true, email: true } },
@@ -60,6 +78,10 @@ export class InterventionService {
 
       if (reasons.length === 0) continue;
 
+      if (teacherUserId && (allowedClassIds.size > 0 || allowedStudentIds.size > 0)) {
+        if (!allowedClassIds.has(s.classId) && !allowedStudentIds.has(s.id)) continue;
+      }
+
       const lastLog = await prisma.interventionLog.findFirst({
         where: { studentId: s.id },
         orderBy: { createdAt: 'desc' },
@@ -105,9 +127,38 @@ export class InterventionService {
     });
   }
 
-  async getLogs(studentId?: string, teacherUserId?: string) {
-    const where: { studentId?: string } = {};
+  async getLogs(studentId?: string, teacherUserId?: string, callerRole?: string) {
+    const where: { studentId?: string | { in: string[] } } = {};
     if (studentId) where.studentId = studentId;
+    if (callerRole === 'TEACHER' && teacherUserId) {
+      const teacher = await prisma.teacher.findUnique({ where: { userId: teacherUserId } });
+      if (teacher) {
+        const allowedClassIds = new Set<string>();
+        const allowedStudentIds = new Set<string>();
+        const sessions = await prisma.attendanceSession.findMany({ where: { teacherId: teacher.id }, select: { classId: true } });
+        sessions.forEach((s) => { if (s.classId) allowedClassIds.add(s.classId); });
+        const targets = await prisma.assignmentTarget.findMany({
+          where: { assignment: { createdBy: teacher.id } },
+          select: { classId: true, studentId: true },
+        });
+        targets.forEach((t) => {
+          if (t.classId) allowedClassIds.add(t.classId);
+          if (t.studentId) allowedStudentIds.add(t.studentId);
+        });
+        const studentsInScope = await prisma.student.findMany({
+          where: { OR: [{ classId: { in: Array.from(allowedClassIds) } }, { id: { in: Array.from(allowedStudentIds) } }] },
+          select: { id: true },
+        });
+        const ids = studentsInScope.map((s) => s.id);
+        if (ids.length === 0) return [];
+        if (studentId) {
+          if (!ids.includes(studentId)) return [];
+          where.studentId = studentId;
+        } else {
+          where.studentId = { in: ids };
+        }
+      }
+    }
     const logs = await prisma.interventionLog.findMany({
       where,
       include: {

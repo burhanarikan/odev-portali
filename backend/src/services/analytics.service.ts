@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import { createError } from '../middleware/errorHandler';
 
 interface DashboardStats {
   totalAssignments: number;
@@ -18,7 +19,8 @@ interface DashboardStats {
 }
 
 export class AnalyticsService {
-  async getDashboardStats(): Promise<DashboardStats> {
+  async getDashboardStats(callerRole: string): Promise<DashboardStats> {
+    if (callerRole !== 'ADMIN' && callerRole !== 'TEACHER') throw createError('Yetkisiz', 403);
     const [
       totalAssignments,
       totalStudents,

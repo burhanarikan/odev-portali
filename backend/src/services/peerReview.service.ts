@@ -98,12 +98,12 @@ export class PeerReviewService {
     });
   }
 
-  /** Bir teslime gelen akran puanları (anonim: sadece puan ve geri bildirim). Teslim sahibi veya hoca görebilir. */
+  /** Bir teslime gelen akran puanları (anonim: sadece puan ve geri bildirim). Teslim sahibi veya o ödevi oluşturan öğretmen görebilir. */
   async getPeerReviewsReceived(submissionId: string, requesterUserId: string, requesterRole: string) {
     const submission = await prisma.submission.findUnique({
       where: { id: submissionId },
       include: {
-        assignment: true,
+        assignment: { select: { createdBy: true } },
         student: true,
         peerReviews: { orderBy: { createdAt: 'desc' } },
       },
@@ -111,16 +111,37 @@ export class PeerReviewService {
     if (!submission) throw createError('Teslim bulunamadı', 404);
 
     const isOwner = submission.student?.userId === requesterUserId;
-    const isTeacher = requesterRole === 'TEACHER' || requesterRole === 'ADMIN';
-    if (!isOwner && !isTeacher) throw createError('Bu teslimin akran değerlendirmelerini görme yetkiniz yok', 403);
-
-    return submission.peerReviews.map((r) => ({
-      id: r.id,
-      score: Number(r.score),
-      criteriaScores: r.criteriaScores,
-      feedback: r.feedback,
-      createdAt: r.createdAt,
-    }));
+    if (isOwner) {
+      return submission.peerReviews.map((r) => ({
+        id: r.id,
+        score: Number(r.score),
+        criteriaScores: r.criteriaScores,
+        feedback: r.feedback,
+        createdAt: r.createdAt,
+      }));
+    }
+    if (requesterRole === 'ADMIN') {
+      return submission.peerReviews.map((r) => ({
+        id: r.id,
+        score: Number(r.score),
+        criteriaScores: r.criteriaScores,
+        feedback: r.feedback,
+        createdAt: r.createdAt,
+      }));
+    }
+    if (requesterRole === 'TEACHER') {
+      const teacher = await prisma.teacher.findUnique({ where: { userId: requesterUserId } });
+      if (teacher && submission.assignment.createdBy === teacher.id) {
+        return submission.peerReviews.map((r) => ({
+          id: r.id,
+          score: Number(r.score),
+          criteriaScores: r.criteriaScores,
+          feedback: r.feedback,
+          createdAt: r.createdAt,
+        }));
+      }
+    }
+    throw createError('Bu teslimin akran değerlendirmelerini görme yetkiniz yok', 403);
   }
 
   /** En adil puan verenler: hocanın puanı ile akran puanının sapması en düşük olan öğrenciler. */
