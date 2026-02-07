@@ -15,18 +15,26 @@ CREATE TABLE IF NOT EXISTS "homeworks" (
     CONSTRAINT "homeworks_pkey" PRIMARY KEY ("id")
 );
 
--- 2) Eksik sütunlar
+-- 2) assignments
 ALTER TABLE "assignments" ADD COLUMN IF NOT EXISTS "homework_id" TEXT;
 ALTER TABLE "assignments" ADD COLUMN IF NOT EXISTS "peer_review_enabled" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "assignments" ADD COLUMN IF NOT EXISTS "peer_reviews_per_student" INTEGER NOT NULL DEFAULT 2;
+
+-- 3) submissions
 ALTER TABLE "submissions" ADD COLUMN IF NOT EXISTS "audioUrl" TEXT;
 ALTER TABLE "submissions" ADD COLUMN IF NOT EXISTS "fileUrl" TEXT;
 
--- 3) homeworks index'leri (yoksa oluştur; hata verirse yok sayın)
+-- 4) homeworks (ek sütunlar; tablo zaten varsa)
+ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "instructions" TEXT;
+ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "type" TEXT NOT NULL DEFAULT 'TEXT';
+ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "file_url" TEXT;
+ALTER TABLE "homeworks" ADD COLUMN IF NOT EXISTS "audio_url" TEXT;
+
+-- 5) homeworks index'leri (yoksa oluştur; hata verirse yok sayın)
 CREATE INDEX IF NOT EXISTS "homeworks_teacher_id_idx" ON "homeworks"("teacher_id");
 CREATE INDEX IF NOT EXISTS "homeworks_level_id_idx" ON "homeworks"("level_id");
 
--- 4) Foreign key (zaten varsa hata verir; o satırı atlayın)
+-- 6) Foreign key (zaten varsa hata verir; o satırı atlayın)
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'assignments_homework_id_fkey') THEN

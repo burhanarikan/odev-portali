@@ -51,3 +51,22 @@ DATABASE_URL="postgresql://..." npx prisma migrate deploy
 ```
 
 Çıktıda "No pending migrations" veya "already applied" görmelisiniz. Bundan sonra Render build içinde `prisma migrate deploy` sorunsuz çalışır.
+
+---
+
+## Hâlâ "column X does not exist" alıyorsan (tam şema senkronu)
+
+Prisma’nın üreteceği tam farkı uygulayın:
+
+```bash
+cd backend
+export DATABASE_URL="postgresql://..."   # production URL
+
+# Mevcut DB ile şema arasındaki farkı SQL olarak üret
+npm run db:sync-diff > prisma/sync-production.sql
+
+# Üretilen SQL'i uygula (önce dosyaya göz atın; CREATE TABLE varsa tablo yoksa çalışır)
+npx prisma db execute --file prisma/sync-production.sql
+```
+
+Not: `sync-production.sql` içinde `IF NOT EXISTS` olmayan satırlar olabilir; bir sütun zaten varsa o satır hata verir, diğerleri çalışır. Tekrarda sadece eksik kalanlar eklenir.
