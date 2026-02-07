@@ -15,9 +15,8 @@ DATABASE_URL="postgresql://neondb_owner:...@...neon.tech/neondb?sslmode=require"
 
 `DATABASE_URL` değerini Render → Environment’tan kopyala. Bu script şunları ekler (yoksa):
 
-- `assignments`: homework_id, peer_review_enabled, peer_reviews_per_student  
-- `submissions`: audioUrl, fileUrl  
-- `homeworks`: instructions, type, file_url, audio_url  
+- **Tablolar:** timeline_posts, announcements, error_bank_entries, teacher_resources, intervention_logs, user_consents, attendance_sessions, attendance_records, make_up_slots, make_up_bookings, student_skill_scores  
+- **Sütunlar:** assignments (homework_id, peer_review_enabled, peer_reviews_per_student), submissions (audioUrl, fileUrl), evaluations (annotation_data), homeworks (instructions, type, file_url, audio_url, fileUrl, audioUrl)  
 
 ---
 

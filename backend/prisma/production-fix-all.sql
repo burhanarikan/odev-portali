@@ -1,5 +1,63 @@
--- Production'da "column does not exist" ve consent tablosu hatalarını gidermek için.
+-- Production'da "column does not exist" ve eksik tablo hatalarını gidermek için.
 -- Bir kez çalıştırın: DATABASE_URL="..." npx prisma db execute --file prisma/production-fix-all.sql
+
+-- timeline_posts (zaman tüneli)
+CREATE TABLE IF NOT EXISTS "timeline_posts" (
+    "id" TEXT NOT NULL,
+    "class_id" TEXT NOT NULL,
+    "teacher_id" TEXT NOT NULL,
+    "summary" TEXT NOT NULL,
+    "image_url" TEXT,
+    "link_url" TEXT,
+    "post_date" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "timeline_posts_pkey" PRIMARY KEY ("id")
+);
+
+-- announcements (duyurular)
+CREATE TABLE IF NOT EXISTS "announcements" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "author_id" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "announcements_pkey" PRIMARY KEY ("id")
+);
+
+-- error_bank_entries (hata bankası)
+CREATE TABLE IF NOT EXISTS "error_bank_entries" (
+    "id" TEXT NOT NULL,
+    "student_id" TEXT NOT NULL,
+    "teacher_id" TEXT NOT NULL,
+    "error_text" TEXT NOT NULL,
+    "submission_id" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "error_bank_entries_pkey" PRIMARY KEY ("id")
+);
+
+-- teacher_resources (ders paylaşım havuzu)
+CREATE TABLE IF NOT EXISTS "teacher_resources" (
+    "id" TEXT NOT NULL,
+    "teacher_id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "file_url" TEXT,
+    "link_url" TEXT,
+    "level_id" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "teacher_resources_pkey" PRIMARY KEY ("id")
+);
+
+-- intervention_logs (müdahale logları)
+CREATE TABLE IF NOT EXISTS "intervention_logs" (
+    "id" TEXT NOT NULL,
+    "student_id" TEXT NOT NULL,
+    "teacher_id" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "note" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "intervention_logs_pkey" PRIMARY KEY ("id")
+);
 
 -- user_consents: findUnique(userId) için unique index gerekli (şemada userId @unique)
 CREATE TABLE IF NOT EXISTS "user_consents" (
@@ -133,4 +191,46 @@ DO $$ BEGIN
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'student_skill_scores_student_id_fkey') THEN
     ALTER TABLE "student_skill_scores" ADD CONSTRAINT "student_skill_scores_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+
+-- timeline_posts, announcements, error_bank_entries, teacher_resources, intervention_logs FK'ler
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'timeline_posts_class_id_fkey') THEN
+    ALTER TABLE "timeline_posts" ADD CONSTRAINT "timeline_posts_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "classes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'timeline_posts_teacher_id_fkey') THEN
+    ALTER TABLE "timeline_posts" ADD CONSTRAINT "timeline_posts_teacher_id_fkey" FOREIGN KEY ("teacher_id") REFERENCES "teachers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'announcements_author_id_fkey') THEN
+    ALTER TABLE "announcements" ADD CONSTRAINT "announcements_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'error_bank_entries_student_id_fkey') THEN
+    ALTER TABLE "error_bank_entries" ADD CONSTRAINT "error_bank_entries_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'error_bank_entries_teacher_id_fkey') THEN
+    ALTER TABLE "error_bank_entries" ADD CONSTRAINT "error_bank_entries_teacher_id_fkey" FOREIGN KEY ("teacher_id") REFERENCES "teachers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'error_bank_entries_submission_id_fkey') THEN
+    ALTER TABLE "error_bank_entries" ADD CONSTRAINT "error_bank_entries_submission_id_fkey" FOREIGN KEY ("submission_id") REFERENCES "submissions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'teacher_resources_teacher_id_fkey') THEN
+    ALTER TABLE "teacher_resources" ADD CONSTRAINT "teacher_resources_teacher_id_fkey" FOREIGN KEY ("teacher_id") REFERENCES "teachers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'teacher_resources_level_id_fkey') THEN
+    ALTER TABLE "teacher_resources" ADD CONSTRAINT "teacher_resources_level_id_fkey" FOREIGN KEY ("level_id") REFERENCES "levels"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'intervention_logs_student_id_fkey') THEN
+    ALTER TABLE "intervention_logs" ADD CONSTRAINT "intervention_logs_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'intervention_logs_teacher_id_fkey') THEN
+    ALTER TABLE "intervention_logs" ADD CONSTRAINT "intervention_logs_teacher_id_fkey" FOREIGN KEY ("teacher_id") REFERENCES "teachers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF; END $$;
