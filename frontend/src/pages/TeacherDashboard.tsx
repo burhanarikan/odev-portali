@@ -3,11 +3,11 @@ import { useAuthStore } from '@/store/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate, isOverdue } from '@/utils/formatDate';
 import { Calendar, Clock, FileText, Users, Plus, User, Mic, Upload, Layers, Inbox, ClipboardCheck, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { PageLoading } from '@/components/feedback/PageLoading';
+import { PageError } from '@/components/feedback/PageError';
 
 export const TeacherDashboard = () => {
   const { user } = useAuthStore();
@@ -16,40 +16,8 @@ export const TeacherDashboard = () => {
   const { data: submissions = [] } = useTeacherSubmissions();
   const pendingGrading = submissions.filter((s) => !s.evaluation).slice(0, 5);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-56 mb-2" />
-          <Skeleton className="h-4 w-72" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-28 rounded-lg" />
-          <Skeleton className="h-28 rounded-lg" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24 rounded-lg" />
-          ))}
-        </div>
-        <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          <p className="text-sm text-gray-500">Yükleniyor…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <p className="text-red-600 font-medium">Ödevler yüklenirken bir hata oluştu.</p>
-          <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (isLoading) return <PageLoading message="Ödevler yükleniyor…" />;
+  if (error) return <PageError message="Ödevler yüklenirken bir hata oluştu." onRetry={() => window.location.reload()} />;
 
   const totalAssignments = assignments?.length || 0;
   const draftAssignments = assignments?.filter(a => a.isDraft).length || 0;

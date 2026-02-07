@@ -75,9 +75,14 @@ export const AttendanceJoinPage = () => {
         longitude: lon,
       });
       if (result.success) {
+        const locationNote = result.locationOk === false
+          ? ' (Konum sınıf dışında; kayıt alındı ancak konum doğrulanmadı)'
+          : result.locationOk === true
+            ? ' Konum doğrulandı.'
+            : '';
         toast({
           title: 'Katıldınız',
-          description: result.message,
+          description: (result.message || '') + locationNote,
         });
         setDigits(Array(CODE_LENGTH).fill(''));
         focusInput(0);
@@ -109,6 +114,9 @@ export const AttendanceJoinPage = () => {
           </CardTitle>
           <CardDescription>
             Hocanın tahtada paylaştığı 6 haneli yoklama kodunu girin.
+            <span className="mt-2 block text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 text-xs">
+              Konum doğrulamalı QR yoklama: Sadece sınıf konumundayken kaydınız onaylanır. Konum izni vermezseniz katılım &quot;Konum paylaşılmadı&quot; olarak işlenir.
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">

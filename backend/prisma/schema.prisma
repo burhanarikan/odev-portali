@@ -40,6 +40,7 @@ model User {
   announcements Announcement[]
   consent       UserConsent?
 
+  @@index([role])
   @@map("users")
 }
 
@@ -104,6 +105,7 @@ model Student {
   skillScore         StudentSkillScore?
   makeUpBookings     MakeUpBooking[]
 
+  @@index([classId])
   @@map("students")
 }
 
@@ -206,6 +208,10 @@ model Assignment {
   groups      Group[]
   submissions Submission[]
 
+  @@index([createdBy])
+  @@index([levelId])
+  @@index([dueDate])
+  @@index([isDraft])
   @@map("assignments")
 }
 
@@ -274,6 +280,8 @@ model Submission {
   peerReviews     PeerReview[]
   errorBankEntries ErrorBankEntry[]
 
+  @@index([assignmentId])
+  @@index([studentId])
   @@map("submissions")
 }
 
@@ -329,6 +337,9 @@ model AttendanceSession {
   teacher  Teacher            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   records  AttendanceRecord[]
 
+  @@index([code])
+  @@index([classId])
+  @@index([endTime])
   @@map("attendance_sessions")
 }
 
@@ -347,6 +358,8 @@ model AttendanceRecord {
   student Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
   @@map("attendance_records")
 }
 

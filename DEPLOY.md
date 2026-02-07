@@ -75,9 +75,11 @@ Render’da **FRONTEND_URL** = `https://sizin-frontend.vercel.app` ekleyin (virg
 
 ---
 
-## 3. Frontend (Vite / React)
+## 3. Frontend
 
-### Vercel
+İki seçenek: **(A) Next.js** (kök dizin, Vercel'de `build:next`) veya **(B) Vite SPA** (`frontend` dizini).
+
+### Vercel (Vite SPA — Root Directory: frontend)
 
 1. [vercel.com](https://vercel.com) → GitHub ile giriş → **Add New Project**
 2. Repo seçin.
@@ -92,9 +94,9 @@ Render’da **FRONTEND_URL** = `https://sizin-frontend.vercel.app` ekleyin (virg
 
 `frontend/vercel.json` zaten eklendi; tüm path’ler `index.html`’e gidiyor (SPA).
 
-**Not (Vercel build):** Bu proje Next.js değil, Vite SPA'dır. `/api/uploads` ve tüm API istekleri frontend tarafında değil, backend (Render) üzerinden yapılır. Vercel yalnızca static build (`dist`) sunar; "failed to collect page data" hatası bu repo yapısında oluşmaz. İleride Next.js API route eklenirse, Vercel Serverless/Edge uyumlu kod (Node/Edge runtime) kullanın.
+**Next.js (Vercel) seçeneği:** Kök dizinde Next.js uygulaması da vardır. Vercel'de root'u seçip **Build Command:** `npm run build:next` kullanırsanız Next.js deploy edilir; `/api/uploads` (Blob+base64) ve NextAuth rol yönlendirmesi (HOCA→/dashboard/teacher, OGRENCI→/dashboard/student) çalışır. Ortam: `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_API_URL`, `BLOB_READ_WRITE_TOKEN`.
 
-**API rotaları ve dosya sistemi (fs):** Backend'de yükleme artık **sadece bellek + Vercel Blob** kullanıyor; `express.static` ile disk sunumu kaldırıldı (Vercel serverless ile uyum için). Kök dizindeki `next.config.js` ileride Next.js kullanılırsa referans amaçlıdır; API rotalarında `fs` kullanmayın, Vercel Blob veya base64 kullanın.
+**API ve fs:** Backend'de yükleme **bellek + Vercel Blob** (ve JSON base64) kullanıyor; `fs` yok. Next.js API rotalarında da `fs` kullanılmaz.
 
 ### Netlify
 

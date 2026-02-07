@@ -160,6 +160,7 @@ export class AttendanceService {
     return {
       success: true,
       message: 'Yoklamaya katıldınız.',
+      locationOk,
     };
   }
 

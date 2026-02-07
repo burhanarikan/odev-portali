@@ -14,6 +14,7 @@ import { uploadApi } from '@/api/upload.api';
 import { Upload, X, FileText, Mic, Square, Loader2, ShieldAlert, RotateCcw, Play } from 'lucide-react';
 import { AudioPlayer } from '@/components/ui/audio-player';
 import { AudioLevelVisualizer } from '@/components/student/AudioLevelVisualizer';
+import { WaveformPlayer } from '@/components/student/WaveformPlayer';
 
 const submissionSchema = z.object({
   contentText: z.string().optional(),
@@ -47,14 +48,10 @@ function RecordedPreview({
     <div className="space-y-3">
       <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
         <Play className="h-4 w-4" />
-        Önce dinle, beğenmezsen yeniden kaydet
+        Önce dinle, beğenmezsen yeniden kaydet (dalga formu ile)
       </p>
       {objectUrl && (
-        <audio
-          controls
-          src={objectUrl}
-          className="w-full max-w-full h-10"
-        />
+        <WaveformPlayer src={objectUrl} height={56} className="mt-2" />
       )}
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onRetake} className="gap-1">

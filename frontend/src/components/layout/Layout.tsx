@@ -9,6 +9,10 @@ type LayoutProps = {
   children?: React.ReactNode;
 };
 
+/**
+ * Tek AppShell: Sidebar + Header ile tüm dashboard sayfaları bu layout içinde.
+ * Dil Eğitim Merkezi portalı — ölçeklenebilir yapı.
+ */
 export const Layout = ({ children }: LayoutProps) => {
   const { consentModalOpen, setConsentModalOpen } = useConsentStore();
   const { user } = useAuthStore();
@@ -29,3 +33,6 @@ export const Layout = ({ children }: LayoutProps) => {
     </div>
   );
 };
+
+/** Aynı bileşen; AppShell olarak da kullanılabilir */
+export const AppShell = Layout;

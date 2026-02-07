@@ -4,11 +4,11 @@ import { useConsentStore } from '@/store/consentStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate, isOverdue, isStarted, timeUntil } from '@/utils/formatDate';
 import { Calendar, Clock, FileText, CheckCircle, ClipboardList, LogIn, ChevronRight, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { PageLoading } from '@/components/feedback/PageLoading';
+import { PageError } from '@/components/feedback/PageError';
 
 /** Dairesel ilerleme (0-100) */
 function CircularProgress({ value, size = 48, strokeWidth = 4 }: { value: number; size?: number; strokeWidth?: number }) {
@@ -40,40 +40,8 @@ export const StudentDashboard = () => {
   const { accepted: consentAccepted } = useConsent();
   const setConsentModalOpen = useConsentStore((s) => s.setConsentModalOpen);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-32 rounded-lg" />
-          <Skeleton className="h-32 rounded-lg" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-24 rounded-lg" />
-          <Skeleton className="h-24 rounded-lg" />
-          <Skeleton className="h-24 rounded-lg" />
-        </div>
-        <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          <p className="text-sm text-gray-500">Ödevler yükleniyor…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <p className="text-red-600 font-medium">Ödevler yüklenirken bir hata oluştu.</p>
-          <p className="text-sm text-gray-500 mt-1">Sayfayı yenileyip tekrar deneyin.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (isLoading) return <PageLoading message="Ödevler yükleniyor…" />;
+  if (error) return <PageError message="Ödevler yüklenirken bir hata oluştu." onRetry={() => window.location.reload()} />;
 
   const getStatusBadge = (assignment: import('@/types').Assignment) => {
     const hasSubmission = assignment.submissions && assignment.submissions.length > 0;

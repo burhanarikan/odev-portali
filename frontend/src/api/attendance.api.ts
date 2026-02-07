@@ -52,6 +52,7 @@ export const attendanceApi = {
       success: boolean;
       reason?: string;
       message: string;
+      locationOk?: boolean;
     }>('/attendance/join', data);
     return res.data;
   },

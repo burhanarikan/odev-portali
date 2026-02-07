@@ -8,6 +8,7 @@ const router = Router();
 router.use(authenticate);
 
 router.post('/blob', uploadSingleMemory('file'), uploadToBlob);
+router.post('/blob/base64', uploadToBlob); // JSON: { base64, filename?, contentType? } — Vercel/serverless uyumlu
 router.post('/blob/delete', deleteFromBlob);
 
 export default router;
