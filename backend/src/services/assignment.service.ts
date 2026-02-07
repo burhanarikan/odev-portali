@@ -82,6 +82,8 @@ export class AssignmentService {
         createdBy: teacher.id,
         attachments: JSON.stringify(data.attachments || []),
         isDraft: data.isDraft || false,
+        peerReviewEnabled: data.peerReviewEnabled ?? false,
+        peerReviewsPerStudent: data.peerReviewsPerStudent ?? 2,
       },
       include: {
         homework: true,

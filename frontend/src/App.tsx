@@ -17,6 +17,7 @@ import { AttendanceJoinPage } from '@/pages/AttendanceJoinPage';
 import { AnnouncementsPage } from '@/pages/AnnouncementsPage';
 import { PortfolioPage } from '@/pages/PortfolioPage';
 import { StudentPortfolioPage } from '@/pages/StudentPortfolioPage';
+import { PeerReviewPage } from '@/pages/PeerReviewPage';
 import { NotFound } from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -152,6 +153,14 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<PortfolioPage />} />
+        </Route>
+
+        <Route path="/peer-review" element={
+          <ProtectedRoute allowedRole="STUDENT">
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<PeerReviewPage />} />
         </Route>
 
         <Route path="/settings" element={

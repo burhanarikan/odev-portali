@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/store/authStore';
 import { APP_VERSION, APP_UPDATED_AT } from '@/config/version';
-import { LayoutDashboard, FileText, Users, BarChart3, Inbox, Settings, Award, ClipboardCheck, LogIn, Megaphone, BookOpen } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, BarChart3, Inbox, Settings, Award, ClipboardCheck, LogIn, Megaphone, BookOpen, MessageSquare } from 'lucide-react';
 
 const navigation = [
   {
@@ -27,6 +27,12 @@ const navigation = [
     name: 'Değerlendirmelerim',
     href: '/evaluations',
     icon: Award,
+    roles: ['STUDENT'],
+  },
+  {
+    name: 'Akran Değerlendirme',
+    href: '/peer-review',
+    icon: MessageSquare,
     roles: ['STUDENT'],
   },
   {

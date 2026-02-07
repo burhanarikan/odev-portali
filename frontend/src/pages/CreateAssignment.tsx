@@ -48,6 +48,8 @@ export const CreateAssignment = () => {
   const [homeworkFileUrl, setHomeworkFileUrl] = useState<string | null>(null);
   const [homeworkAudioUrl, setHomeworkAudioUrl] = useState<string | null>(null);
   const [uploadingHomeworkFile, setUploadingHomeworkFile] = useState(false);
+  const [peerReviewEnabled, setPeerReviewEnabled] = useState(false);
+  const [peerReviewsPerStudent, setPeerReviewsPerStudent] = useState(2);
 
   const form = useForm<AssignmentFormData>({
     resolver: zodResolver(assignmentSchema),
@@ -117,6 +119,8 @@ export const CreateAssignment = () => {
     if (homeworkInstructions.trim()) backendData.homeworkInstructions = homeworkInstructions.trim();
     if (homeworkFileUrl) backendData.homeworkFileUrl = homeworkFileUrl;
     if (homeworkAudioUrl) backendData.homeworkAudioUrl = homeworkAudioUrl;
+    backendData.peerReviewEnabled = peerReviewEnabled;
+    backendData.peerReviewsPerStudent = peerReviewsPerStudent;
     createMutation.mutate(backendData as Parameters<typeof createMutation.mutate>[0], {
       onSuccess: () => {
         toast({
@@ -570,6 +574,38 @@ export const CreateAssignment = () => {
                       </label>
                     ))}
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Akran değerlendirme */}
+            <div className="space-y-3 border-t pt-4">
+              <p className="text-sm font-medium leading-none">Akran değerlendirme</p>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={peerReviewEnabled}
+                  onChange={(e) => setPeerReviewEnabled(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <span>Öğrenciler birbirlerinin ödevini anonim puanlasın (akran değerlendirme)</span>
+              </label>
+              {peerReviewEnabled && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="peerReviewsPerStudent">Öğrenci başına değerlendirme sayısı</Label>
+                  <Select
+                    value={String(peerReviewsPerStudent)}
+                    onValueChange={(v) => setPeerReviewsPerStudent(parseInt(v, 10))}
+                  >
+                    <SelectTrigger id="peerReviewsPerStudent" className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>

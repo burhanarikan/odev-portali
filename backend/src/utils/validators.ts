@@ -49,6 +49,8 @@ const assignmentFields = z.object({
   homeworkInstructions: z.string().optional(),
   homeworkFileUrl: z.string().optional(),
   homeworkAudioUrl: z.string().optional(),
+  peerReviewEnabled: z.boolean().optional(),
+  peerReviewsPerStudent: z.number().int().min(1).max(5).optional(),
 });
 
 export const assignmentSchema = assignmentFields.refine(
@@ -72,9 +74,17 @@ export const evaluationSchema = z.object({
   accepted: z.boolean().default(false),
 });
 
+export const peerReviewSchema = z.object({
+  submissionId: z.string().uuid(),
+  score: z.number().min(1).max(10),
+  criteriaScores: z.record(z.string(), z.number().min(1).max(10)).optional(),
+  feedback: z.string().max(2000).optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type HomeworkInput = z.infer<typeof homeworkSchema>;
 export type AssignmentInput = z.infer<typeof assignmentSchema>;
 export type SubmissionInput = z.infer<typeof submissionSchema>;
 export type EvaluationInput = z.infer<typeof evaluationSchema>;
+export type PeerReviewInput = z.infer<typeof peerReviewSchema>;

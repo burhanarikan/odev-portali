@@ -52,6 +52,8 @@ export interface Assignment {
   dueDate: string;
   isDraft: boolean;
   attachments: string[];
+  peerReviewEnabled?: boolean;
+  peerReviewsPerStudent?: number;
   createdAt: string;
   updatedAt: string;
   level: Level;

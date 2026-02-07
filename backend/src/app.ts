@@ -12,6 +12,7 @@ import analyticsRoutes from './routes/analytics.routes';
 import uploadRoutes from './routes/upload.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import announcementRoutes from './routes/announcement.routes';
+import peerReviewRoutes from './routes/peerReview.routes';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/peer-review', peerReviewRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

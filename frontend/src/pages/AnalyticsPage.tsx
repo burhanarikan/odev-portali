@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi, type StudentsProgressItem } from '@/api';
 import { attendanceApi } from '@/api/attendance.api';
+import { peerReviewApi } from '@/api/peerReview.api';
 import { useAuthStore } from '@/store/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ import {
   Calendar,
   ClipboardList,
   Briefcase,
+  Award,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
@@ -40,6 +42,11 @@ export const AnalyticsPage = () => {
     queryKey: ['analytics', 'teacher-workload'],
     queryFn: analyticsApi.getTeacherWorkload,
     enabled: isAdmin,
+  });
+  const { data: fairnessLeaderboard = [], isLoading: fairnessLoading } = useQuery({
+    queryKey: ['peer-review', 'fairness-leaderboard'],
+    queryFn: () => peerReviewApi.getFairnessLeaderboard(10),
+    enabled: !!user && (user.role === 'TEACHER' || user.role === 'ADMIN'),
   });
 
   if (isLoading) {
@@ -352,6 +359,57 @@ export const AnalyticsPage = () => {
                           <Badge variant={row.absenceRate > 30 ? 'destructive' : row.absenceRate > 15 ? 'secondary' : 'outline'}>
                             %{row.absenceRate.toFixed(1)}
                           </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Akran değerlendirme – En adil puan verenler */}
+      {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Award className="h-5 w-5" />
+              <span>En adil puan verenler (Akran değerlendirme)</span>
+            </CardTitle>
+            <CardDescription>
+              Hoca puanı ile akran puanı farkı en düşük olan öğrenciler; kaliteli akran değerlendirmesi teşviki.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {fairnessLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : fairnessLeaderboard.length === 0 ? (
+              <p className="text-sm text-gray-500">Henüz yeterli veri yok (hoca puanı olan teslimlere verilen akran puanları gerekir).</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 font-medium">#</th>
+                      <th className="text-left py-2 font-medium">Öğrenci</th>
+                      <th className="text-left py-2 font-medium">Seviye</th>
+                      <th className="text-right py-2 font-medium">Değerlendirme sayısı</th>
+                      <th className="text-right py-2 font-medium">Ort. sapma</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fairnessLeaderboard.map((row, index) => (
+                      <tr key={row.studentId} className="border-b hover:bg-gray-50">
+                        <td className="py-2 font-medium">{index + 1}</td>
+                        <td className="py-2">{row.studentName}</td>
+                        <td className="py-2">{row.levelName}</td>
+                        <td className="py-2 text-right">{row.reviewCount}</td>
+                        <td className="py-2 text-right">
+                          <Badge variant="outline">{row.averageDeviation.toFixed(2)}</Badge>
                         </td>
                       </tr>
                     ))}

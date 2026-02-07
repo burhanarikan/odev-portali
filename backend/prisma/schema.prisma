@@ -83,6 +83,7 @@ model Student {
   assignmentTargets  AssignmentTarget[]
   groupMembers       GroupMember[]
   attendanceRecords  AttendanceRecord[]
+  peerReviewsGiven   PeerReview[]
 
   @@map("students")
 }
@@ -135,14 +136,16 @@ model Assignment {
   createdBy   String   @map("created_by")
   startDate   DateTime @map("start_date")
   dueDate     DateTime @map("due_date")
-  isDraft     Boolean  @default(false) @map("is_draft")
-  attachments Json     @default("[]")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  isDraft              Boolean  @default(false) @map("is_draft")
+  peerReviewEnabled    Boolean  @default(false) @map("peer_review_enabled")
+  peerReviewsPerStudent Int     @default(2) @map("peer_reviews_per_student")
+  attachments         Json     @default("[]")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  homework Homework?  @relation(fields: [homeworkId], references: [id], onDelete: SetNull)
-  level    Level      @relation(fields: [levelId], references: [id], onDelete: Cascade)
-  teacher  Teacher    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  homework   Homework?  @relation(fields: [homeworkId], references: [id], onDelete: SetNull)
+  level      Level      @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  teacher    Teacher    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 
   targets     AssignmentTarget[]
   groups      Group[]
@@ -209,12 +212,30 @@ model Submission {
   fileUrl      String?
   createdAt    DateTime @default(now()) @map("created_at")
 
-  assignment Assignment  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  student    Student?    @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  group      Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  evaluation Evaluation?
+  assignment  Assignment   @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student     Student?     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group       Group?       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  evaluation  Evaluation?
+  peerReviews PeerReview[]
 
   @@map("submissions")
+}
+
+/// Akran değerlendirme: öğrenci başka bir öğrencinin teslimini anonim kriterlere göre puanlar.
+model PeerReview {
+  id              String   @id @default(uuid())
+  submissionId    String   @map("submission_id")
+  reviewerStudentId String @map("reviewer_student_id")
+  score           Decimal  @db.Decimal(3, 1)
+  criteriaScores  Json?    @map("criteria_scores")
+  feedback        String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer   Student    @relation(fields: [reviewerStudentId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, reviewerStudentId])
+  @@map("peer_reviews")
 }
 
 model Evaluation {
