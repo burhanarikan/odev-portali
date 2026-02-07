@@ -5,6 +5,7 @@ import { HomeworkService } from '../services/homework.service';
 import { MakeUpService } from '../services/makeUp.service';
 import { assignmentSchema, assignmentUpdateSchema, evaluationSchema, homeworkSchema } from '../utils/validators';
 import { errorHandler, AppError } from '../middleware/errorHandler';
+import { sendJson } from '../utils/serialize';
 import { prisma } from '../config/database';
 
 const assignmentService = new AssignmentService();
@@ -29,7 +30,7 @@ export const getAssignments = async (req: Request, res: Response, next: NextFunc
     // Yönetici tüm ödevleri görür (kim ne vermiş takibi)
     const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
     const assignments = await assignmentService.getAssignments(teacherUserId, req.user.role);
-    res.json(assignments);
+    sendJson(res, assignments);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
   }
@@ -232,29 +233,15 @@ export const deleteHomework = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-/** Prisma Decimal ve diğer JSON-dışı tipleri güvenli şekilde düz metne çevirir (500 önlemek için). */
-function serializeSubmissions(submissions: unknown[]): unknown[] {
-  return submissions.map((s: Record<string, unknown>) => {
-    const out = { ...s };
-    if (out.evaluation && typeof out.evaluation === 'object' && out.evaluation !== null) {
-      const ev = out.evaluation as Record<string, unknown>;
-      if (ev.score != null && typeof (ev.score as { toString?: () => string }).toString === 'function') {
-        ev.score = Number((ev.score as { toString: () => string }).toString()) || null;
-      }
-    }
-    return out;
-  });
-}
-
 export const getSubmissions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     // ADMIN'ın Teacher kaydı yok; boş dizi dön
     if (req.user.role === 'ADMIN') {
-      return res.json([]);
+      return sendJson(res, []);
     }
     const submissions = await assignmentService.getSubmissionsForTeacher(req.user.userId);
-    res.json(serializeSubmissions(submissions as unknown[]));
+    sendJson(res, submissions);
   } catch (error: unknown) {
     errorHandler(error as AppError, req, res, next);
   }
