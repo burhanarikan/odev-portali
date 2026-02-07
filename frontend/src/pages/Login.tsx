@@ -56,7 +56,18 @@ export const Login = () => {
   }, [toast]);
 
   const showError = (error: unknown) => {
-    const err = error as { code?: string; message?: string; response?: { data?: { error?: string } } };
+    const err = error as { code?: string; message?: string; response?: { status?: number; data?: { error?: string } } };
+    const status = err?.response?.status;
+    const serverError = (err?.response?.data?.error ?? '').toLowerCase();
+    const isInvalidCredentials = status === 401 || serverError.includes('invalid credentials');
+    if (isLogin && isInvalidCredentials) {
+      toast({
+        title: 'Giriş başarısız',
+        description: 'E-posta veya şifre hatalı.',
+        variant: 'destructive',
+      });
+      return;
+    }
     const isTimeout = err?.code === 'ECONNABORTED' || (typeof err?.message === 'string' && err.message.includes('timeout'));
     const isNetwork = err?.code === 'ERR_NETWORK' || !err?.response;
     let msg: string;
@@ -112,14 +123,14 @@ export const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background w-full min-w-0">
       <div className="absolute top-4 right-4">
         <Button variant="ghost" size="icon" onClick={toggle} className="rounded-full" aria-label={effective === 'dark' ? 'Açık tema' : 'Koyu tema'}>
           {effective === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
       </div>
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center w-full min-w-0 py-6 sm:py-12 px-3 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md min-w-0 mx-auto shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
             {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
@@ -182,15 +193,19 @@ export const Login = () => {
                 )}
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full"
+              <Button
+                type="submit"
+                className="w-full min-h-11"
                 disabled={loginMutation.isPending}
               >
                 {loginMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Giriş Yap
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                    Giriş yapılıyor…
+                  </>
+                ) : (
+                  'Giriş Yap'
+                )}
               </Button>
             </form>
           ) : (
@@ -272,15 +287,19 @@ export const Login = () => {
                 )}
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full"
+              <Button
+                type="submit"
+                className="w-full min-h-11"
                 disabled={registerMutation.isPending}
               >
                 {registerMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Kayıt Ol
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                    Kaydediliyor…
+                  </>
+                ) : (
+                  'Kayıt Ol'
+                )}
               </Button>
             </form>
           )}
@@ -298,7 +317,7 @@ export const Login = () => {
             </button>
           </div>
         </CardContent>
-      </Card>
+        </Card>
       </div>
     </div>
   );

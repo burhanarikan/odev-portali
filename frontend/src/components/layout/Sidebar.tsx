@@ -130,10 +130,14 @@ export const Sidebar = () => {
         </div>
         <div className="mt-8 flex-1 flex flex-col">
           <nav className="flex-1 px-2 pb-4 space-y-1">
-            {filteredNavigation.map((item) => (
+            {filteredNavigation.map((item) => {
+              const href = item.name === 'Ana Sayfa'
+                ? (user?.role === 'STUDENT' ? '/student' : '/teacher')
+                : item.href;
+              return (
               <NavLink
                 key={item.name}
-                to={item.href}
+                to={href}
                 className={({ isActive }) =>
                   cn(
                     'group flex items-center px-2 py-2 text-sm font-medium rounded-md',
@@ -155,7 +159,8 @@ export const Sidebar = () => {
                   </>
                 )}
               </NavLink>
-            ))}
+              );
+            })}
           </nav>
         </div>
         <div className="flex-shrink-0 px-4 py-3 border-t border-border">

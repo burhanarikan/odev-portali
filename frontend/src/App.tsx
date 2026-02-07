@@ -39,7 +39,8 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
   if (allowedRole && user?.role) {
     const allowed = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
     if (!allowed.includes(user.role)) {
-      return <Navigate to="/dashboard" replace />;
+      const fallback = user.role === 'STUDENT' ? '/student' : '/teacher';
+      return <Navigate to={fallback} replace />;
     }
   }
 
@@ -58,20 +59,39 @@ function App() {
     <ThemeProvider>
       <Routes>
         <Route path="/login" element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+          isAuthenticated
+            ? <Navigate to={user?.role === 'STUDENT' ? '/student' : '/teacher'} replace />
+            : <Login />
         } />
-        
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/assignments" element={<Navigate to="/dashboard" replace />} />
 
+        <Route path="/" element={
+          isAuthenticated
+            ? <Navigate to={user?.role === 'STUDENT' ? '/student' : '/teacher'} replace />
+            : <Navigate to="/login" replace />
+        } />
         <Route path="/dashboard" element={
-          <ProtectedRoute>
+          <Navigate to={user?.role === 'STUDENT' ? '/student' : '/teacher'} replace />
+        } />
+        <Route path="/assignments" element={
+          isAuthenticated
+            ? <Navigate to={user?.role === 'STUDENT' ? '/student' : '/teacher'} replace />
+            : <Navigate to="/login" replace />
+        } />
+
+        <Route path="/teacher" element={
+          <ProtectedRoute allowedRole={['TEACHER', 'ADMIN']}>
             <Layout />
           </ProtectedRoute>
         }>
-          <Route index element={
-            user?.role === 'STUDENT' ? <StudentDashboard /> : <TeacherDashboard />
-          } />
+          <Route index element={<TeacherDashboard />} />
+        </Route>
+
+        <Route path="/student" element={
+          <ProtectedRoute allowedRole="STUDENT">
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<StudentDashboard />} />
         </Route>
 
         <Route path="/assignments/create" element={

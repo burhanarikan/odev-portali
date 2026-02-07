@@ -1,3 +1,8 @@
+/**
+ * Disk tabanlı multer — Vercel serverless ile uyumlu DEĞİL.
+ * Üretimde upload API'si uploadMemory.ts + Vercel Blob kullanıyor (fs yok).
+ * Bu modül yerel geliştirme veya dosya tabanlı depolama gerektiğinde kullanılabilir.
+ */
 import { Request } from 'express';
 import multer from 'multer';
 import path from 'path';

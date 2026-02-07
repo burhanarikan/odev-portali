@@ -84,6 +84,10 @@ Render’da **FRONTEND_URL** = `https://sizin-frontend.vercel.app` ekleyin (virg
 
 `frontend/vercel.json` zaten eklendi; tüm path’ler `index.html`’e gidiyor (SPA).
 
+**Not (Vercel build):** Bu proje Next.js değil, Vite SPA'dır. `/api/uploads` ve tüm API istekleri frontend tarafında değil, backend (Render) üzerinden yapılır. Vercel yalnızca static build (`dist`) sunar; "failed to collect page data" hatası bu repo yapısında oluşmaz. İleride Next.js API route eklenirse, Vercel Serverless/Edge uyumlu kod (Node/Edge runtime) kullanın.
+
+**API rotaları ve dosya sistemi (fs):** Backend'de yükleme artık **sadece bellek + Vercel Blob** kullanıyor; `express.static` ile disk sunumu kaldırıldı (Vercel serverless ile uyum için). Kök dizindeki `next.config.js` ileride Next.js kullanılırsa referans amaçlıdır; API rotalarında `fs` kullanmayın, Vercel Blob veya base64 kullanın.
+
 ### Netlify
 
 1. [netlify.com](https://netlify.com) → Add new site → Import from Git → Repo seçin.

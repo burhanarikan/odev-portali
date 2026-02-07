@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import path from 'path';
 
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth.routes';
@@ -46,7 +45,7 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Dosya sunumu yok: yüklemeler Vercel Blob üzerinden (public URL). FS kullanımı Vercel serverless ile uyumlu değildir.
 
 app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
