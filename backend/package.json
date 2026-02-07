@@ -11,6 +11,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma generate && prisma migrate deploy",
+    "db:sync-diff": "prisma migrate diff --from-url \"$DATABASE_URL\" --to-schema-datamodel prisma/schema.prisma --script",
     "db:backfill-homework": "tsx prisma/backfill-homework.ts",
     "db:studio": "prisma studio",
     "lint": "eslint src --ext .ts",

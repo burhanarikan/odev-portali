@@ -125,19 +125,28 @@ export class StudentService {
     return assignment;
   }
 
+  /** userId şemada @unique; findUnique geçerli. Hata (tablo/DB yok vs.) durumunda 500 yerine accepted: false dönüyoruz. */
   async getConsent(userId: string): Promise<{ accepted: boolean; acceptedAt?: Date }> {
-    const consent = await prisma.userConsent.findUnique({
-      where: { userId },
-    });
-    return consent ? { accepted: true, acceptedAt: consent.acceptedAt } : { accepted: false };
+    try {
+      const consent = await prisma.userConsent.findUnique({
+        where: { userId },
+      });
+      return consent ? { accepted: true, acceptedAt: consent.acceptedAt } : { accepted: false };
+    } catch {
+      return { accepted: false };
+    }
   }
 
   async recordConsent(userId: string) {
-    return prisma.userConsent.upsert({
-      where: { userId },
-      create: { userId },
-      update: {},
-    });
+    try {
+      return await prisma.userConsent.upsert({
+        where: { userId },
+        create: { userId },
+        update: {},
+      });
+    } catch (err) {
+      throw createError('Onay kaydedilemedi.', 500);
+    }
   }
 
   async submitAssignment(data: SubmissionInput, studentId: string) {

@@ -1,5 +1,14 @@
--- Production'da "column does not exist" hatalarını gidermek için tüm bilinen eksik sütunlar.
+-- Production'da "column does not exist" ve consent tablosu hatalarını gidermek için.
 -- Bir kez çalıştırın: DATABASE_URL="..." npx prisma db execute --file prisma/production-fix-all.sql
+
+-- user_consents: findUnique(userId) için unique index gerekli (şemada userId @unique)
+CREATE TABLE IF NOT EXISTS "user_consents" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "accepted_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "user_consents_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "user_consents_user_id_key" ON "user_consents"("user_id");
 
 -- assignments
 ALTER TABLE "assignments" ADD COLUMN IF NOT EXISTS "homework_id" TEXT;
