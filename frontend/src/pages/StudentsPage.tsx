@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Loader2 } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useTeacherStudents } from '@/hooks/useAssignments';
 import { StudentsTable } from '@/components/students/StudentsTable';
 import { PageLoading } from '@/components/feedback/PageLoading';
