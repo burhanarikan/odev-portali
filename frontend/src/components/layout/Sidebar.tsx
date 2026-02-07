@@ -132,21 +132,21 @@ export const Sidebar = () => {
 
   return (
     <>
-      {/* Overlay: tıklanınca menüyü kapat */}
-      <button
-        type="button"
-        aria-label="Menüyü kapat"
-        onClick={() => setOpen(false)}
-        className={cn(
-          'fixed inset-0 z-40 bg-black/50 transition-opacity',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0'
-        )}
-      />
-      {/* Açılır panel */}
+      {/* Overlay: sadece açıkken görünür, tıklanınca menüyü kapat */}
+      {open && (
+        <button
+          type="button"
+          aria-label="Menüyü kapat"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-40 bg-black/50"
+        />
+      )}
+      {/* Açılır panel: kapalıyken ekranda hiç yer kaplamaz (görünmez + ekran dışında) */}
       <aside
+        aria-hidden={!open}
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col bg-card border-r border-border shadow-xl transition-transform duration-200 ease-out',
-          open ? 'translate-x-0' : '-translate-x-full'
+          'fixed top-0 bottom-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col bg-card border-r border-border shadow-xl transition-transform duration-200 ease-out',
+          open ? 'translate-x-0' : '-translate-x-full pointer-events-none'
         )}
       >
         <div className="flex items-center justify-between flex-shrink-0 px-4 py-4 border-b border-border">
