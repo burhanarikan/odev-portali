@@ -26,12 +26,15 @@ export const createAssignment = async (req: Request, res: Response, next: NextFu
 
 export const getAssignments = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log('[Teacher] getAssignments start', { role: req.user?.role, userId: req.user?.userId ? '***' : undefined });
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     // Yönetici tüm ödevleri görür (kim ne vermiş takibi)
     const teacherUserId = req.user.role === 'ADMIN' ? undefined : req.user.userId;
     const assignments = await assignmentService.getAssignments(teacherUserId, req.user.role);
     sendJson(res, assignments);
   } catch (error: unknown) {
+    const e = error as Error;
+    console.error('[Teacher] getAssignments error:', e?.message ?? e, (error as { code?: string })?.code);
     errorHandler(error as AppError, req, res, next);
   }
 };
@@ -235,6 +238,7 @@ export const deleteHomework = async (req: Request, res: Response, next: NextFunc
 
 export const getSubmissions = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log('[Teacher] getSubmissions start', { role: req.user?.role });
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     // ADMIN'ın Teacher kaydı yok; boş dizi dön
     if (req.user.role === 'ADMIN') {
@@ -243,6 +247,8 @@ export const getSubmissions = async (req: Request, res: Response, next: NextFunc
     const submissions = await assignmentService.getSubmissionsForTeacher(req.user.userId);
     sendJson(res, submissions);
   } catch (error: unknown) {
+    const e = error as Error;
+    console.error('[Teacher] getSubmissions error:', e?.message ?? e, (error as { code?: string })?.code);
     errorHandler(error as AppError, req, res, next);
   }
 };
