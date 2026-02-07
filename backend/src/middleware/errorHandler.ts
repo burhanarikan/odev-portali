@@ -63,8 +63,9 @@ export const errorHandler = (
       stack: err.stack,
     });
   } else {
+    // Production'da 500'de de gerçek mesajı döndür: "column X does not exist" gibi hatalar kullanıcının migration çalıştırmasını sağlar
     res.status(statusCode).json({
-      error: statusCode === 500 ? 'Internal Server Error' : message,
+      error: message,
     });
   }
 };

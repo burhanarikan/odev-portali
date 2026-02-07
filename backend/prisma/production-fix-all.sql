@@ -68,6 +68,23 @@ CREATE TABLE IF NOT EXISTS "user_consents" (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "user_consents_user_id_key" ON "user_consents"("user_id");
 
+-- homeworks tablosu yoksa oluştur (ödev oluşturma için gerekli)
+CREATE TABLE IF NOT EXISTS "homeworks" (
+    "id" TEXT NOT NULL,
+    "teacher_id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "instructions" TEXT,
+    "type" TEXT NOT NULL DEFAULT 'TEXT',
+    "fileUrl" TEXT,
+    "audioUrl" TEXT,
+    "level_id" TEXT NOT NULL,
+    "week_number" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "homeworks_pkey" PRIMARY KEY ("id")
+);
+
 -- assignments
 ALTER TABLE "assignments" ADD COLUMN IF NOT EXISTS "homework_id" TEXT;
 ALTER TABLE "assignments" ADD COLUMN IF NOT EXISTS "peer_review_enabled" BOOLEAN NOT NULL DEFAULT false;
@@ -154,6 +171,20 @@ CREATE TABLE IF NOT EXISTS "student_skill_scores" (
     CONSTRAINT "student_skill_scores_pkey" PRIMARY KEY ("id")
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "student_skill_scores_student_id_key" ON "student_skill_scores"("student_id");
+
+-- homeworks FK'ler (tablo yeni oluşturulduysa)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'homeworks_teacher_id_fkey') THEN
+    ALTER TABLE "homeworks" ADD CONSTRAINT "homeworks_teacher_id_fkey" FOREIGN KEY ("teacher_id") REFERENCES "teachers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'homeworks_level_id_fkey') THEN
+    ALTER TABLE "homeworks" ADD CONSTRAINT "homeworks_level_id_fkey" FOREIGN KEY ("level_id") REFERENCES "levels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'assignments_homework_id_fkey') THEN
+    ALTER TABLE "assignments" ADD CONSTRAINT "assignments_homework_id_fkey" FOREIGN KEY ("homework_id") REFERENCES "homeworks"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF; END $$;
 
 -- Foreign key'ler (tablo zaten varsa eklenmiş olabilir; hata verirse yok sayın)
 DO $$ BEGIN

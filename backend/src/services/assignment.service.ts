@@ -46,19 +46,31 @@ export class AssignmentService {
       if (existing) {
         throw createError('Bu seviye ve haftada aynı başlıkta bir ödeviniz zaten var. Başlığı değiştirin veya farklı hafta seçin.', 409);
       }
-      const created = await prisma.homework.create({
-        data: {
-          teacherId: teacher.id,
-          title,
-          description: description || null,
-          instructions: data.homeworkInstructions || null,
-          type: data.homeworkType || 'TEXT',
-          fileUrl: data.homeworkFileUrl || null,
-          audioUrl: data.homeworkAudioUrl || null,
-          levelId,
-          weekNumber,
-        },
-      });
+      let created: { id: string };
+      try {
+        created = await prisma.homework.create({
+          data: {
+            teacherId: teacher.id,
+            title,
+            description: description || null,
+            instructions: data.homeworkInstructions || null,
+            type: data.homeworkType || 'TEXT',
+            fileUrl: data.homeworkFileUrl || null,
+            audioUrl: data.homeworkAudioUrl || null,
+            levelId,
+            weekNumber,
+          },
+        });
+      } catch (e) {
+        const msg = (e as Error)?.message ?? '';
+        if (/column.*does not exist|relation.*does not exist/i.test(msg)) {
+          throw createError(
+            'Veritabanında eksik tablo veya kolon. Backend dizininde: npx prisma db execute --file prisma/production-fix-all.sql',
+            503
+          );
+        }
+        throw e;
+      }
       homework = created;
     }
 
@@ -70,31 +82,43 @@ export class AssignmentService {
     const assignLevelId = homeworkRecord?.levelId ?? levelId;
     const assignWeek = homeworkRecord?.weekNumber ?? weekNumber;
 
-    const assignment = await prisma.assignment.create({
-      data: {
-        homeworkId: homework.id,
-        title: assignTitle,
-        description: assignDesc,
-        levelId: assignLevelId,
-        weekNumber: assignWeek,
-        startDate: new Date(data.startDate),
-        dueDate: new Date(data.dueDate),
-        createdBy: teacher.id,
-        attachments: JSON.stringify(data.attachments || []),
-        isDraft: data.isDraft || false,
-        peerReviewEnabled: data.peerReviewEnabled ?? false,
-        peerReviewsPerStudent: data.peerReviewsPerStudent ?? 2,
-      },
-      include: {
-        homework: true,
-        level: true,
-        teacher: {
-          include: {
-            user: true,
+    let assignment;
+    try {
+      assignment = await prisma.assignment.create({
+        data: {
+          homeworkId: homework.id,
+          title: assignTitle,
+          description: assignDesc,
+          levelId: assignLevelId,
+          weekNumber: assignWeek,
+          startDate: new Date(data.startDate),
+          dueDate: new Date(data.dueDate),
+          createdBy: teacher.id,
+          attachments: JSON.stringify(data.attachments || []),
+          isDraft: data.isDraft || false,
+          peerReviewEnabled: data.peerReviewEnabled ?? false,
+          peerReviewsPerStudent: data.peerReviewsPerStudent ?? 2,
+        },
+        include: {
+          homework: true,
+          level: true,
+          teacher: {
+            include: {
+              user: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (e) {
+      const msg = (e as Error)?.message ?? '';
+      if (/column.*does not exist|relation.*does not exist/i.test(msg)) {
+        throw createError(
+          'Veritabanında eksik tablo veya kolon. Backend dizininde: npx prisma db execute --file prisma/production-fix-all.sql',
+          503
+        );
+      }
+      throw e;
+    }
 
     // Hedef: sadece belirli sınıf veya belirli öğrenciler
     if (data.classId) {
